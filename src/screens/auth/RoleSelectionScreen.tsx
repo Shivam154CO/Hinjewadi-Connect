@@ -1,0 +1,307 @@
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { useAuth } from '../../context/AuthContext';
+import { AuthScreenProps, UserRole, ListingCategory } from '../../types';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+interface RoleCardProps {
+    title: string;
+    description: string;
+    icon: string;
+    role: UserRole;
+    onSelect: (role: UserRole) => void;
+    color: string;
+}
+
+const RoleCard: React.FC<RoleCardProps> = ({ title, description, icon, role, onSelect, color }) => (
+    <TouchableOpacity
+        style={[styles.card, SHADOWS.light]}
+        onPress={() => onSelect(role)}
+        activeOpacity={0.7}
+    >
+        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+            <MaterialCommunityIcons name={icon as any} size={32} color={color} />
+        </View>
+        <View style={styles.cardText}>
+            <Text style={styles.cardTitle}>{title}</Text>
+            <Text style={styles.cardDescription}>{description}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.textSecondary} />
+    </TouchableOpacity>
+);
+
+interface ListingCategoryCardProps {
+    title: string;
+    description: string;
+    icon: string;
+    category: ListingCategory;
+    onSelect: (category: ListingCategory) => void;
+    color: string;
+}
+
+const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({ 
+    title, description, icon, category, onSelect, color 
+}) => (
+    <TouchableOpacity
+        style={[styles.categoryCard, SHADOWS.light]}
+        onPress={() => onSelect(category)}
+        activeOpacity={0.7}
+    >
+        <View style={[styles.categoryIconContainer, { backgroundColor: color + '20' }]}>
+            <MaterialCommunityIcons name={icon as any} size={28} color={color} />
+        </View>
+        <View style={styles.categoryCardText}>
+            <Text style={styles.categoryCardTitle}>{title}</Text>
+            <Text style={styles.categoryCardDescription}>{description}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.textSecondary} />
+    </TouchableOpacity>
+);
+
+export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = ({ navigation }) => {
+    const { setRole, setListingCategory } = useAuth();
+    const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+
+    const handleRoleSelect = (role: UserRole) => {
+        setSelectedRole(role);
+        
+        // For employer role, we need to show category selection first
+        if (role === 'employer') {
+            // Don't navigate yet - show category selection
+            return;
+        }
+        
+        // For tenant and worker, set role and navigate
+        setRole(role);
+        setListingCategory(null);
+        navigation.navigate('ProfileCreation', { role });
+    };
+
+    const handleCategorySelect = (category: ListingCategory) => {
+        if (selectedRole) {
+            setRole(selectedRole);
+            setListingCategory(category);
+            navigation.navigate('ProfileCreation', { role: selectedRole, listingCategory: category });
+        }
+    };
+
+    const handleBack = () => {
+        setSelectedRole(null);
+    };
+
+    // Show listing category selection for employer role
+    if (selectedRole === 'employer') {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                            <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.text} />
+                        </TouchableOpacity>
+                        <Text style={styles.title}>What do you want to list?</Text>
+                        <Text style={styles.subtitle}>Select the type of listing you want to post</Text>
+                    </View>
+
+                    <View style={styles.list}>
+                        <ListingCategoryCard
+                            title="List Property"
+                            description="Post rooms, PG, or flats for rent."
+                            icon="home-city"
+                            category="property"
+                            onSelect={handleCategorySelect}
+                            color={COLORS.primary}
+                        />
+
+                        <ListingCategoryCard
+                            title="Post Jobs"
+                            description="Hire workers for your society or office."
+                            icon="briefcase-plus"
+                            category="job"
+                            onSelect={handleCategorySelect}
+                            color={COLORS.success}
+                        />
+
+                        <ListingCategoryCard
+                            title="Both"
+                            description="List property and post jobs."
+                            icon="format-list-bulleted"
+                            category="both"
+                            onSelect={handleCategorySelect}
+                            color={COLORS.secondary}
+                        />
+                    </View>
+
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>
+                            You can always switch your role later in settings
+                        </Text>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+
+    // Default role selection view
+    return (
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>What are you looking for?</Text>
+                    <Text style={styles.subtitle}>Choose your primary role to get started</Text>
+                </View>
+
+                <View style={styles.list}>
+                    <RoleCard
+                        title="Looking for Room / PG"
+                        description="Find the best rooms and PGs in Phase 1, 2, or 3."
+                        icon="home-search"
+                        role="tenant"
+                        onSelect={handleRoleSelect}
+                        color={COLORS.primary}
+                    />
+
+                    <RoleCard
+                        title="Looking for Work"
+                        description="Find local jobs as a maid, cook, driver, or helper."
+                        icon="briefcase-search"
+                        role="worker"
+                        onSelect={handleRoleSelect}
+                        color={COLORS.success}
+                    />
+
+                    <RoleCard
+                        title="Hiring / List Property"
+                        description="Post jobs or list your room/PG for others."
+                        icon="account-hard-hat"
+                        role="employer"
+                        onSelect={handleRoleSelect}
+                        color={COLORS.secondary}
+                    />
+                </View>
+
+                <View style={styles.footer}>
+                    <Text style={styles.footerText}>
+                        You can always switch your role later in settings
+                    </Text>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.surface,
+    },
+    scrollContent: {
+        padding: SPACING.lg,
+        flexGrow: 1,
+    },
+    header: {
+        marginTop: SPACING.xl,
+        marginBottom: SPACING.xxl,
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: '800',
+        color: COLORS.text,
+        marginBottom: SPACING.xs,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+    },
+    backButton: {
+        marginBottom: SPACING.md,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...SHADOWS.light,
+    },
+    list: {
+        gap: SPACING.md,
+    },
+    card: {
+        backgroundColor: COLORS.white,
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.sm,
+    },
+    iconContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: BORDER_RADIUS.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: SPACING.md,
+    },
+    cardText: {
+        flex: 1,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.text,
+        marginBottom: 4,
+    },
+    cardDescription: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        lineHeight: 20,
+    },
+    // Category selection styles
+    categoryCard: {
+        backgroundColor: COLORS.white,
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.sm,
+    },
+    categoryIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: BORDER_RADIUS.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: SPACING.md,
+    },
+    categoryCardText: {
+        flex: 1,
+    },
+    categoryCardTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: COLORS.text,
+        marginBottom: 4,
+    },
+    categoryCardDescription: {
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        lineHeight: 18,
+    },
+    footer: {
+        marginTop: 'auto',
+        paddingVertical: SPACING.xl,
+        alignItems: 'center',
+    },
+    footerText: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        fontStyle: 'italic',
+    },
+});
