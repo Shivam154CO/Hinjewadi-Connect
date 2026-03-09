@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,12 +6,17 @@ import {
     FlatList,
     TouchableOpacity,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainTabScreenProps, Job } from '../../types';
 import { executeContact } from '../../utils/contactUtils';
+import { jobService } from '../../services/jobService';
+import { PHASE_COORDS, PhaseKey, sortByPhaseDistance } from '../../utils/geoUtils';
+import { useAuth } from '../../context/AuthContext';
+import { VerifiedBadge } from '../../components/TrustBadges';
 
 const JOB_CATEGORIES = [
     { key: 'Peon', label: 'Peon', icon: 'account' },
@@ -28,119 +33,17 @@ const AREA_FILTERS = ['All', 'Phase 1', 'Phase 2', 'Phase 3'];
 
 const TABS = ['Browse Jobs', 'My Applications'];
 
-const MOCK_JOBS: Job[] = [
-    {
-        id: '1',
-        employerId: 'e1',
-        title: 'Security Guard',
-        company: 'Tech Park Security Services',
-        category: 'Guard',
-        description: 'Security guard needed for day shift at Hinjewadi Tech Park. Must be physically fit and alert. Prior experience in corporate security preferred.',
-        area: 'Phase 1',
-        type: 'Full Time',
-        experience: '2-5 years',
-        salary: '₹15,000 - ₹20,000/mo',
-        contactPhone: '9876543001',
-        postedAgo: '2 days ago',
-        urgent: false,
-        requirements: ['Physical fitness', 'Age 25-45', 'Marathi/Hindi', 'No criminal record'],
-        benefits: ['PF', 'ESI', 'Uniform', 'Weekly off'],
-    },
-    {
-        id: '2',
-        employerId: 'e2',
-        title: 'Office Boy',
-        company: 'Infosys BPO',
-        category: 'Office Boy',
-        description: 'Office boy required for IT company. Duties include pantry management, document handling, and general office support.',
-        area: 'Phase 2',
-        type: 'Full Time',
-        experience: '1-3 years',
-        salary: '₹12,000 - ₹15,000/mo',
-        contactPhone: '9876543002',
-        postedAgo: '1 day ago',
-        urgent: true,
-        requirements: ['Basic English', 'Punctual', 'Clean & tidy'],
-        benefits: ['PF', 'Lunch provided', 'Bonus'],
-    },
-    {
-        id: '3',
-        employerId: 'e3',
-        title: 'Night Watchman',
-        company: 'Blue Ridge Society',
-        category: 'Watchman',
-        description: 'Night watchman needed for residential society. Night shift from 8 PM to 8 AM. Safe neighborhood.',
-        area: 'Phase 3',
-        type: 'Full Time',
-        experience: '0-2 years',
-        salary: '₹10,000 - ₹14,000/mo',
-        contactPhone: '9876543003',
-        postedAgo: '3 days ago',
-        urgent: false,
-        requirements: ['Night shift OK', 'Trustworthy', 'Local resident preferred'],
-        benefits: ['Monthly bonus', 'Festival bonus', 'Meals provided'],
-    },
-    {
-        id: '4',
-        employerId: 'e4',
-        title: 'Personal Driver',
-        company: 'Executive Transport',
-        category: 'Driver',
-        description: 'Personal driver needed for family. Daily school drop + office commute. Must have valid DL and good driving record.',
-        area: 'Phase 1',
-        type: 'Full Time',
-        experience: '3-5 years',
-        salary: '₹18,000 - ₹25,000/mo',
-        contactPhone: '9876543004',
-        postedAgo: '5 hours ago',
-        urgent: true,
-        requirements: ['Valid DL', 'Clean record', 'Non-smoker', 'Knows city routes'],
-        benefits: ['Free meals', 'Accommodation possible', 'Half day Sunday'],
-    },
-    {
-        id: '5',
-        employerId: 'e5',
-        title: 'Office Peon',
-        company: 'Wipro Technologies',
-        category: 'Peon',
-        description: 'Peon required for corporate office. Document delivery, tea service, and general housekeeping duties.',
-        area: 'Phase 1',
-        type: 'Part Time',
-        experience: '1-2 years',
-        salary: '₹8,000 - ₹12,000/mo',
-        contactPhone: '9876543005',
-        postedAgo: '1 week ago',
-        urgent: false,
-        requirements: ['Honest', 'Hardworking', 'Basic reading skills'],
-        benefits: ['PF', 'Tea/snacks'],
-    },
-    {
-        id: '6',
-        employerId: 'e6',
-        title: 'Kitchen Helper',
-        company: 'Spice Paradise Restaurant',
-        category: 'Helper',
-        description: 'Helper needed for restaurant kitchen. Vegetable cutting, cleaning, and assisting the head cook.',
-        area: 'Phase 2',
-        type: 'Full Time',
-        experience: '0-1 years',
-        salary: '₹10,000 - ₹13,000/mo',
-        contactPhone: '9876543006',
-        postedAgo: '4 days ago',
-        urgent: false,
-        requirements: ['Hygiene conscious', 'Team player', 'Can stand long hours'],
-        benefits: ['Free meals', 'Tips', 'Weekly off'],
-    },
-];
-
 const JobCard = ({ job, onPress }: { job: Job; onPress: () => void }) => {
-    const handleCall = () => executeContact('call', {
-        name: job.company,
-        phone: job.contactPhone,
-        context: 'job',
-        contextTitle: job.title,
-        contextCompany: job.company,
-    });
+    const handleCall = () => {
+        jobService.incrementLeads(job.id).catch(() => { });
+        executeContact('call', {
+            name: job.company,
+            phone: job.contactPhone,
+            context: 'job',
+            contextTitle: job.title,
+            contextCompany: job.company,
+        });
+    };
 
     return (
         <TouchableOpacity
@@ -168,7 +71,10 @@ const JobCard = ({ job, onPress }: { job: Job; onPress: () => void }) => {
 
             {/* Content */}
             <View style={styles.jobContent}>
-                <Text style={styles.jobTitle}>{job.title}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={styles.jobTitle}>{job.title}</Text>
+                    <VerifiedBadge status="verified" size="sm" />
+                </View>
                 <Text style={styles.jobCompany}>{job.company}</Text>
 
                 {/* Info chips */}
@@ -203,18 +109,43 @@ const JobCard = ({ job, onPress }: { job: Job; onPress: () => void }) => {
 };
 
 export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation }) => {
+    const { user } = useAuth();
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState(0);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedArea, setSelectedArea] = useState('All');
+    const [sortBy, setSortBy] = useState<'recent' | 'distance'>('recent');
+    const [selectedPhase, setSelectedPhase] = useState<PhaseKey>((user?.area as PhaseKey) || 'Phase 1');
 
-    const filteredJobs = MOCK_JOBS.filter(job => {
+    useEffect(() => {
+        fetchJobs();
+    }, []);
+
+    const fetchJobs = async () => {
+        try {
+            setLoading(true);
+            const data = await jobService.getJobs();
+            setJobs(data);
+        } catch (error) {
+            console.error('Failed to fetch jobs:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredJobs = jobs.filter(job => {
         const categoryMatch = !selectedCategory || job.category === selectedCategory;
         const areaMatch = selectedArea === 'All' || job.area === selectedArea;
         return categoryMatch && areaMatch;
     });
 
+    const sortedJobs = sortBy === 'distance'
+        ? sortByPhaseDistance(filteredJobs, selectedPhase)
+        : filteredJobs;
+
     const getCategoryCount = (key: string) =>
-        MOCK_JOBS.filter(j => j.category === key).length;
+        jobs.filter(j => j.category === key).length;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -243,6 +174,41 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                     </TouchableOpacity>
                 ))}
             </View>
+
+            {activeTab === 0 && (
+                <View style={styles.sortContainer}>
+                    <View style={styles.sortToggle}>
+                        <TouchableOpacity
+                            style={[styles.sortBtn, sortBy === 'recent' && styles.sortBtnActive]}
+                            onPress={() => setSortBy('recent')}
+                        >
+                            <MaterialCommunityIcons name="clock-outline" size={16} color={sortBy === 'recent' ? COLORS.white : COLORS.textSecondary} />
+                            <Text style={[styles.sortBtnText, sortBy === 'recent' && styles.sortBtnTextActive]}>Recent</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.sortBtn, sortBy === 'distance' && styles.sortBtnActive]}
+                            onPress={() => setSortBy('distance')}
+                        >
+                            <MaterialCommunityIcons name="map-marker-distance" size={16} color={sortBy === 'distance' ? COLORS.white : COLORS.textSecondary} />
+                            <Text style={[styles.sortBtnText, sortBy === 'distance' && styles.sortBtnTextActive]}>Nearby</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {sortBy === 'distance' && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.phaseScroll}>
+                            {(Object.keys(PHASE_COORDS) as PhaseKey[]).map(phase => (
+                                <TouchableOpacity
+                                    key={phase}
+                                    style={[styles.phaseChip, selectedPhase === phase && styles.phaseChipActive]}
+                                    onPress={() => setSelectedPhase(phase)}
+                                >
+                                    <Text style={[styles.phaseChipText, selectedPhase === phase && styles.phaseChipTextActive]}>{phase}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
+            )}
 
             {activeTab === 0 ? (
                 <>
@@ -317,7 +283,7 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
 
                     {/* Job List */}
                     <FlatList
-                        data={filteredJobs}
+                        data={sortedJobs}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
@@ -644,5 +610,60 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.medium,
+    },
+    sortContainer: {
+        paddingHorizontal: SPACING.lg,
+        marginBottom: SPACING.md,
+        gap: SPACING.sm,
+    },
+    sortToggle: {
+        flexDirection: 'row',
+        backgroundColor: '#EEF2F6',
+        borderRadius: BORDER_RADIUS.md,
+        padding: 4,
+    },
+    sortBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: BORDER_RADIUS.md,
+        gap: 6,
+    },
+    sortBtnActive: {
+        backgroundColor: COLORS.primary,
+        ...SHADOWS.light,
+    },
+    sortBtnText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.textSecondary,
+    },
+    sortBtnTextActive: {
+        color: COLORS.white,
+    },
+    phaseScroll: {
+        gap: SPACING.sm,
+    },
+    phaseChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: BORDER_RADIUS.full,
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    phaseChipActive: {
+        backgroundColor: COLORS.primary + '15',
+        borderColor: COLORS.primary,
+    },
+    phaseChipText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: COLORS.textSecondary,
+    },
+    phaseChipTextActive: {
+        color: COLORS.primary,
     },
 });

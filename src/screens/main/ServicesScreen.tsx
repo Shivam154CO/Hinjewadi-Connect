@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,12 +6,15 @@ import {
     FlatList,
     TouchableOpacity,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainTabScreenProps, ServiceProvider } from '../../types';
 import { executeContact, ContactInfo } from '../../utils/contactUtils';
+import { providerService } from '../../services/providerService';
+import { VerifiedCheck } from '../../components/TrustBadges';
 
 const CATEGORIES = [
     { key: 'All', label: 'All', icon: 'view-grid' },
@@ -20,134 +23,6 @@ const CATEGORIES = [
     { key: 'Cleaner', label: 'Cleaner', icon: 'spray' },
     { key: 'Laundry', label: 'Laundry', icon: 'tshirt-crew' },
     { key: 'Driver', label: 'Driver', icon: 'car' },
-];
-
-const MOCK_PROVIDERS: ServiceProvider[] = [
-    {
-        id: '1',
-        name: 'Sunita Devi',
-        phone: '9000000001',
-        whatsapp: '9000000001',
-        category: 'Maid',
-        experience: '5 years',
-        rating: 4.8,
-        totalRatings: 47,
-        areas: ['Phase 1', 'Phase 2'],
-        availability: 'Available',
-        workingHours: '8 AM - 12 PM',
-        description: 'Experienced maid with expertise in cleaning, cooking, and household management.',
-        skills: ['Cleaning', 'Utensils', 'Mopping', 'Dusting'],
-        priceRange: '₹3,000 - ₹5,000/mo',
-        avatarColor: '#E8D5F5',
-        initial: 'SD',
-        reviews: [
-            { id: 'r1', userName: 'Priya S.', rating: 5, comment: 'Very punctual and thorough!', date: '2 weeks ago' },
-            { id: 'r2', userName: 'Rahul M.', rating: 4, comment: 'Good work, reliable.', date: '1 month ago' },
-        ],
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: '2',
-        name: 'Ramesh Kumar',
-        phone: '9000000002',
-        whatsapp: '9000000002',
-        category: 'Cook',
-        experience: '8 years',
-        rating: 4.9,
-        totalRatings: 63,
-        areas: ['Phase 1', 'Phase 2', 'Phase 3'],
-        availability: 'Available',
-        workingHours: '6 AM - 10 AM, 6 PM - 9 PM',
-        description: 'Professional cook specializing in North Indian, South Indian, and Chinese cuisine.',
-        skills: ['North Indian', 'South Indian', 'Chinese', 'Continental'],
-        priceRange: '₹5,000 - ₹8,000/mo',
-        avatarColor: '#D5E8F5',
-        initial: 'RK',
-        reviews: [
-            { id: 'r3', userName: 'Sneha P.', rating: 5, comment: 'Amazing food! Must try.', date: '1 week ago' },
-        ],
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: '3',
-        name: 'Kiran Patil',
-        phone: '9000000003',
-        whatsapp: '9000000003',
-        category: 'Cleaner',
-        experience: '3 years',
-        rating: 4.3,
-        totalRatings: 22,
-        areas: ['Phase 1'],
-        availability: 'Busy',
-        workingHours: '9 AM - 5 PM',
-        description: 'Deep cleaning specialist. Houses, offices, and society common areas.',
-        skills: ['Deep Clean', 'Office', 'Bathroom', 'Kitchen'],
-        priceRange: '₹500 - ₹2,000/visit',
-        avatarColor: '#F5E8D5',
-        initial: 'KP',
-        reviews: [],
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: '4',
-        name: 'Meena Tai',
-        phone: '9000000004',
-        category: 'Maid',
-        experience: '6 years',
-        rating: 4.9,
-        totalRatings: 55,
-        areas: ['Phase 3'],
-        availability: 'Available',
-        workingHours: '9 AM - 1 PM',
-        description: 'Dedicated and trustworthy. Takes care of entire household chores.',
-        skills: ['Cleaning', 'Cooking', 'Childcare', 'Laundry'],
-        priceRange: '₹4,000 - ₹6,000/mo',
-        avatarColor: '#D5F5E8',
-        initial: 'MT',
-        reviews: [
-            { id: 'r4', userName: 'Anita D.', rating: 5, comment: 'Best maid in Phase 3!', date: '3 days ago' },
-        ],
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: '5',
-        name: 'Arun Driver',
-        phone: '9000000005',
-        whatsapp: '9000000005',
-        category: 'Driver',
-        experience: '10 years',
-        rating: 4.7,
-        totalRatings: 38,
-        areas: ['Phase 1', 'Phase 2', 'Phase 3'],
-        availability: 'Available',
-        workingHours: '6 AM - 10 PM',
-        description: 'Professional driver with clean driving record. Available for daily commute and outstation.',
-        skills: ['City', 'Highway', 'Outstation', 'Night Drive'],
-        priceRange: '₹10,000 - ₹15,000/mo',
-        avatarColor: '#F5D5E8',
-        initial: 'AD',
-        reviews: [],
-        createdAt: new Date().toISOString(),
-    },
-    {
-        id: '6',
-        name: 'Lakshmi Bai',
-        phone: '9000000006',
-        category: 'Laundry',
-        experience: '4 years',
-        rating: 4.5,
-        totalRatings: 29,
-        areas: ['Phase 2', 'Phase 3'],
-        availability: 'Available',
-        workingHours: '7 AM - 6 PM',
-        description: 'Ironing and laundry services. Pickup and delivery available.',
-        skills: ['Washing', 'Ironing', 'Dry Clean', 'Pickup/Drop'],
-        priceRange: '₹1,500 - ₹3,000/mo',
-        avatarColor: '#E8F5D5',
-        initial: 'LB',
-        reviews: [],
-        createdAt: new Date().toISOString(),
-    },
 ];
 
 const ProviderCard = ({ provider, onPress }: { provider: ServiceProvider; onPress: () => void }) => {
@@ -182,7 +57,10 @@ const ProviderCard = ({ provider, onPress }: { provider: ServiceProvider; onPres
                 </View>
                 <View style={styles.nameSection}>
                     <View style={styles.nameRatingRow}>
-                        <Text style={styles.providerName}>{provider.name}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.providerName}>{provider.name}</Text>
+                            <VerifiedCheck verified={true} />
+                        </View>
                         <View style={styles.ratingBadge}>
                             <MaterialCommunityIcons name="star" size={14} color="#FFB800" />
                             <Text style={styles.ratingText}>{provider.rating}</Text>
@@ -232,11 +110,23 @@ const ProviderCard = ({ provider, onPress }: { provider: ServiceProvider; onPres
 
             {/* Action buttons */}
             <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+                <TouchableOpacity
+                    style={styles.callButton}
+                    onPress={() => {
+                        providerService.incrementLeads(provider.id).catch(() => { });
+                        handleCall();
+                    }}
+                >
                     <MaterialCommunityIcons name="phone" size={18} color={COLORS.white} />
                     <Text style={styles.callButtonText}>Call</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
+                <TouchableOpacity
+                    style={styles.whatsappButton}
+                    onPress={() => {
+                        providerService.incrementLeads(provider.id).catch(() => { });
+                        handleWhatsApp();
+                    }}
+                >
                     <MaterialCommunityIcons name="whatsapp" size={18} color={COLORS.success} />
                     <Text style={styles.whatsappButtonText}>WhatsApp</Text>
                 </TouchableOpacity>
@@ -249,17 +139,35 @@ const ProviderCard = ({ provider, onPress }: { provider: ServiceProvider; onPres
 };
 
 export const ServicesScreen: React.FC<MainTabScreenProps<'Services'>> = ({ navigation }) => {
+    const [providers, setProviders] = useState<ServiceProvider[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState('All');
 
-    const filteredProviders = MOCK_PROVIDERS.filter(p => {
+    useEffect(() => {
+        fetchProviders();
+    }, []);
+
+    const fetchProviders = async () => {
+        try {
+            setLoading(true);
+            const data = await providerService.getProviders();
+            setProviders(data);
+        } catch (error) {
+            console.error('Failed to fetch providers:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredProviders = providers.filter(p => {
         return selectedCategory === 'All' || p.category === selectedCategory;
     });
 
     const categoryCounts = CATEGORIES.map(cat => ({
         ...cat,
         count: cat.key === 'All'
-            ? MOCK_PROVIDERS.length
-            : MOCK_PROVIDERS.filter(p => p.category === cat.key).length,
+            ? providers.length
+            : providers.filter(p => p.category === cat.key).length,
     }));
 
     return (

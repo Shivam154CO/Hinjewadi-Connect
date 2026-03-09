@@ -8,58 +8,24 @@ import {
     Dimensions,
     FlatList,
     ActivityIndicator,
+    StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { MainTabScreenProps } from '../../types';
 import { RoomCard } from '../../components/RoomCard';
 import { ContactSheet } from '../../components/ContactSheet';
 import { ContactInfo } from '../../utils/contactUtils';
+import { roomService } from '../../services/roomService';
+import { jobService } from '../../services/jobService';
+import { providerService } from '../../services/providerService';
+import { Room, Job, ServiceProvider } from '../../types';
 
 const { width } = Dimensions.get('window');
 const CARD_SIZE = (width - SPACING.lg * 2 - SPACING.md) / 2;
-
-// ── Phase coordinates for distance simulation ──
-const PHASE_COORDS = {
-    'Phase 1': { lat: 18.5912, lng: 73.7388 },
-    'Phase 2': { lat: 18.5962, lng: 73.7148 },
-    'Phase 3': { lat: 18.5723, lng: 73.6998 },
-};
-
-type PhaseKey = 'Phase 1' | 'Phase 2' | 'Phase 3';
-
-// ── Mock data ──
-const NEARBY_ROOMS = [
-    {
-        id: '1', ownerId: '1', title: '2BHK Fully Furnished Flat', description: 'Walking distance from Wipro.', price: 12000, deposit: 25000, area: 'Phase 1',
-        type: 'Flat' as const, furnishing: 'Fully-furnished' as const, genderPreference: 'Any' as const,
-        amenities: ['WiFi', 'AC', 'Parking'], images: [], status: 'Available' as const, contactPhone: '9876543210', createdAt: new Date().toISOString(), distance: '0.5 km',
-    },
-    {
-        id: '2', ownerId: '2', title: 'Shared PG for Girls', description: 'Safe PG near IT park.', price: 6000, deposit: 5000, area: 'Phase 2',
-        type: 'PG' as const, furnishing: 'Fully-furnished' as const, genderPreference: 'Female' as const,
-        amenities: ['Food', 'AC', 'Security'], images: [], status: 'Available' as const, contactPhone: '9876543211', createdAt: new Date().toISOString(), distance: '1.2 km',
-    },
-    {
-        id: '3', ownerId: '3', title: 'Single Room Phase 3', description: 'Spacious room with balcony.', price: 7000, deposit: 15000, area: 'Phase 3',
-        type: 'Room' as const, furnishing: 'Semi-furnished' as const, genderPreference: 'Male' as const,
-        amenities: ['WiFi', 'Bed', 'Cupboard'], images: [], status: 'Available' as const, contactPhone: '9876543212', createdAt: new Date().toISOString(), distance: '2.8 km',
-    },
-];
-
-const NEARBY_JOBS = [
-    { id: 'j1', title: 'Security Guard', company: 'Tech Park Services', area: 'Phase 1', salary: '₹15K-20K/mo', type: 'Full Time', distance: '0.3 km', urgent: true, contactPhone: '9876543001' },
-    { id: 'j2', title: 'Office Boy', company: 'Infosys BPO', area: 'Phase 2', salary: '₹12K-15K/mo', type: 'Full Time', distance: '1.5 km', urgent: false, contactPhone: '9876543002' },
-    { id: 'j3', title: 'Night Watchman', company: 'Blue Ridge Society', area: 'Phase 3', salary: '₹10K-14K/mo', type: 'Full Time', distance: '3.1 km', urgent: false, contactPhone: '9876543003' },
-];
-
-const NEARBY_SERVICES = [
-    { id: 's1', name: 'Sunita Devi', category: 'Maid', rating: 4.8, area: 'Phase 1', availability: 'Available', distance: '0.2 km', initial: 'SD', color: '#E8D5F5', phone: '9000000001' },
-    { id: 's2', name: 'Ramesh Kumar', category: 'Cook', rating: 4.9, area: 'Phase 2', availability: 'Available', distance: '1.0 km', initial: 'RK', color: '#D5E8F5', phone: '9000000002' },
-    { id: 's3', name: 'Arun Driver', category: 'Driver', rating: 4.7, area: 'Phase 1', availability: 'Busy', distance: '0.8 km', initial: 'AD', color: '#F5D5E8', phone: '9000000005' },
-];
 
 const ACTION_CARDS = [
     { key: 'rooms', title: 'Find Home', subtitle: 'Room / PG / Flat', icon: 'home-outline', color: '#00BFA5', route: 'Rooms' },
@@ -68,70 +34,204 @@ const ACTION_CARDS = [
     { key: 'discover', title: 'Discover', subtitle: 'Explore Hinjewadi', icon: 'compass-outline', color: '#FF6D00', route: null },
 ];
 
-// ── Distance helper ──
-const getDistanceKm = (from: PhaseKey, to: PhaseKey): number => {
-    const a = PHASE_COORDS[from];
-    const b = PHASE_COORDS[to];
-    const R = 6371;
-    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-    const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-    const s = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
-};
-
-const sortByPhaseDistance = <T extends { area: string }>(items: T[], selectedPhase: PhaseKey): (T & { distance: string })[] => {
-    return items
-        .map(item => {
-            const dist = getDistanceKm(selectedPhase, item.area as PhaseKey);
-            return { ...item, distance: dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km` };
-        })
-        .sort((a, b) => {
-            const distA = getDistanceKm(selectedPhase, a.area as PhaseKey);
-            const distB = getDistanceKm(selectedPhase, b.area as PhaseKey);
-            return distA - distB;
-        });
-};
+import { PHASE_COORDS, PhaseKey, sortByPhaseDistance, findNearestPhase, isWithinHinjewadiRange, LocationCoords } from '../../utils/geoUtils';
 
 export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const { user } = useAuth();
-    const [selectedPhase, setSelectedPhase] = useState<PhaseKey>('Phase 1');
-    const [detecting, setDetecting] = useState(false);
+    const [selectedPhase, setSelectedPhase] = useState<PhaseKey | null>(null);
+    const [detecting, setDetecting] = useState(true);
     const [sortBy, setSortBy] = useState<'distance' | 'recent'>('distance');
     const [contactSheetVisible, setContactSheetVisible] = useState(false);
     const [activeContact, setActiveContact] = useState<ContactInfo>({ name: '', phone: '' });
+    const [isOutOfRange, setIsOutOfRange] = useState(false);
+    const [locationError, setLocationError] = useState<string | null>(null);
+    const [userCoords, setUserCoords] = useState<LocationCoords | null>(null);
+    const [userAddress, setUserAddress] = useState<string | null>(null);
 
-    // Sort data by distance to selected phase
-    const sortedRooms = sortByPhaseDistance(NEARBY_ROOMS, selectedPhase);
-    const sortedJobs = sortByPhaseDistance(NEARBY_JOBS, selectedPhase);
-    const sortedServices = sortByPhaseDistance(NEARBY_SERVICES, selectedPhase);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [providers, setProviders] = useState<ServiceProvider[]>([]);
+    const [loading, setLoading] = useState(true);
+
+
+    const fetchAllData = async () => {
+        try {
+            setLoading(true);
+            const [roomData, jobData, providerData] = await Promise.all([
+                roomService.getRooms(),
+                jobService.getJobs(),
+                providerService.getProviders()
+            ]);
+            setRooms(roomData);
+            setJobs(jobData);
+            setProviders(providerData);
+        } catch (error) {
+            console.error('Failed to fetch home data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Sort data by distance to selected phase OR exact user coords
+    const sortedRooms = sortByPhaseDistance(rooms, selectedPhase || 'Phase 1', userCoords || undefined);
+    const sortedJobs = sortByPhaseDistance(jobs, selectedPhase || 'Phase 1', userCoords || undefined);
+    const sortedServices = sortByPhaseDistance(providers, selectedPhase || 'Phase 1', userCoords || undefined);
 
     const openContactSheet = (contact: ContactInfo) => {
         setActiveContact(contact);
         setContactSheetVisible(true);
     };
 
-    const handleAutoDetect = () => {
-        setDetecting(true);
-        // Simulate auto-detection
-        setTimeout(() => {
-            setSelectedPhase('Phase 1');
+    const handleAutoDetect = async () => {
+        try {
+            setDetecting(true);
+            setLocationError(null);
+
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                setDetecting(false);
+                setLocationError('Location permission denied');
+                return;
+            }
+
+            // Use a timeout to handle slow/no network gracefully
+            const locationPromise = Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+            });
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('Location timeout')), 15000)
+            );
+
+            let location;
+            try {
+                location = await Promise.race([locationPromise, timeoutPromise]);
+            } catch (e) {
+                setDetecting(false);
+                setLocationError('Slow network – tap to retry');
+                return;
+            }
+
+            const { latitude, longitude } = location.coords;
+
+            // Check if within Hinjewadi range
+            if (isWithinHinjewadiRange(latitude, longitude)) {
+                const { phase } = findNearestPhase(latitude, longitude);
+
+                setUserCoords({ lat: latitude, lng: longitude });
+                setSelectedPhase(phase);
+                setIsOutOfRange(false);
+
+                try {
+                    const [address] = await Location.reverseGeocodeAsync({ latitude, longitude });
+                    if (address) {
+                        const addrString = `${address.name || ''} ${address.street || ''}, ${address.district || ''}`.trim();
+                        setUserAddress(addrString || 'Detected Location');
+                    }
+                } catch (e) {
+                    setUserAddress('Detected Location');
+                }
+
+            } else {
+                setIsOutOfRange(true);
+            }
+        } catch (error) {
+            console.error('Location detection error:', error);
+            setLocationError('Could not detect location – tap to retry');
+        } finally {
             setDetecting(false);
-        }, 1500);
+        }
     };
+
+    useEffect(() => {
+        fetchAllData();
+        handleAutoDetect();
+    }, []);
 
     const handleCardPress = (route: string | null) => {
         if (route) navigation.navigate(route as any);
     };
 
+    const getRoleData = () => {
+        switch (user?.role) {
+            case 'tenant':
+                return {
+                    subtitle: 'Finding you the best rooms nearby',
+                    cards: ACTION_CARDS // Rooms first
+                };
+            case 'worker':
+                return {
+                    subtitle: 'Find new work opportunities locally',
+                    cards: [ACTION_CARDS[1], ACTION_CARDS[2], ACTION_CARDS[0], ACTION_CARDS[3]] // Jobs/Services first
+                };
+            case 'employer':
+                return {
+                    subtitle: 'Manage your listings & community leads',
+                    cards: [
+                        { key: 'dashboard', title: 'Dashboard', subtitle: 'Manage listings', icon: 'view-dashboard', color: COLORS.primary, route: 'ManagePosts' as any },
+                        ...ACTION_CARDS
+                    ]
+                };
+            default:
+                return {
+                    subtitle: 'Your Local Community Platform',
+                    cards: ACTION_CARDS
+                };
+        }
+    };
+
+    const roleData = getRoleData();
+
+    if (isOutOfRange) {
+        return (
+            <View style={styles.restrictedContainer}>
+                <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+                <SafeAreaView style={styles.restrictedContent}>
+                    <View style={styles.restrictedIconWrapper}>
+                        <View style={styles.radarPulse} />
+                        <MaterialCommunityIcons name="map-marker-off" size={80} color={COLORS.primary} />
+                    </View>
+
+                    <Text style={styles.restrictedTitle}>Access Restricted</Text>
+                    <Text style={styles.restrictedSubtitle}>
+                        Saarthi is a hyperlocal platform exclusively for the Hinjewadi IT Park community.
+                    </Text>
+
+                    <View style={styles.restrictedInfoBox}>
+                        <MaterialCommunityIcons name="information-outline" size={20} color={COLORS.textSecondary} />
+                        <Text style={styles.restrictedInfoText}>
+                            Your current location appears to be outside Hinjewadi (Phase 1, 2, or 3).
+                        </Text>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={handleAutoDetect}
+                    >
+                        <Text style={styles.retryButtonText}>Try Detect Again</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.manualButton}
+                        onPress={() => setIsOutOfRange(false)}
+                    >
+                        <Text style={styles.manualButtonText}>Browse Manually</Text>
+                    </TouchableOpacity>
+                </SafeAreaView>
+            </View>
+        );
+    }
+
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* ── HEADER ── */}
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+                {/* ── HEADER ── (extends to top) */}
                 <View style={styles.header}>
+                    <SafeAreaView edges={['top']} />
                     <View style={styles.headerTop}>
                         <View>
-                            <Text style={styles.appName}>Hinjewadi Connect</Text>
-                            <Text style={styles.appSubtitle}>Your Local Community Platform</Text>
+                            <Text style={styles.appName}>Saarthi</Text>
+                            <Text style={styles.appSubtitle}>{roleData.subtitle}</Text>
                         </View>
                         <TouchableOpacity
                             style={styles.profileIndicator}
@@ -145,33 +245,40 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                     <View style={styles.locationBar}>
                         <View style={styles.locationLeft}>
                             <MaterialCommunityIcons name="map-marker" size={20} color={COLORS.primary} />
-                            <View>
-                                <Text style={styles.locationLabel}>Your Area</Text>
-                                <Text style={styles.locationValue}>{selectedPhase}, Hinjewadi</Text>
+                            <View style={styles.locationTextWrap}>
+                                <Text style={styles.locationLabel}>Current Location</Text>
+                                <Text style={styles.locationValue} numberOfLines={1}>
+                                    {detecting ? 'Detecting...' : (userAddress || 'Hinjewadi Community')}
+                                </Text>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.detectButton} onPress={handleAutoDetect}>
-                            {detecting ? (
-                                <ActivityIndicator size="small" color={COLORS.primary} />
-                            ) : (
-                                <>
-                                    <MaterialCommunityIcons name="crosshairs-gps" size={16} color={COLORS.primary} />
-                                    <Text style={styles.detectText}>Detect</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                        {detecting && (
+                            <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />
+                        )}
+                        {!detecting && locationError && (
+                            <TouchableOpacity style={styles.retryChip} onPress={handleAutoDetect}>
+                                <MaterialCommunityIcons name="refresh" size={14} color={'#E65100'} />
+                                <Text style={styles.retryChipText}>Retry</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
+                    {!detecting && locationError && (
+                        <View style={styles.locationErrorBanner}>
+                            <MaterialCommunityIcons name="wifi-alert" size={14} color={'#E65100'} />
+                            <Text style={styles.locationErrorText}>{locationError}</Text>
+                        </View>
+                    )}
 
                     {/* Phase Selector */}
                     <View style={styles.phaseSelector}>
-                        {(['Phase 1', 'Phase 2', 'Phase 3'] as PhaseKey[]).map(phase => (
+                        {(Object.keys(PHASE_COORDS) as PhaseKey[]).map(phase => (
                             <TouchableOpacity
                                 key={phase}
                                 style={[styles.phaseTab, selectedPhase === phase && styles.phaseTabActive]}
                                 onPress={() => setSelectedPhase(phase)}
                             >
                                 <View style={[styles.phaseDot, selectedPhase === phase && styles.phaseDotActive,
-                                { backgroundColor: selectedPhase === phase ? COLORS[phase === 'Phase 1' ? 'phase1' : phase === 'Phase 2' ? 'phase2' : 'phase3'] : 'transparent' }
+                                { backgroundColor: (selectedPhase === phase || (!selectedPhase && detecting)) ? COLORS[phase === 'Phase 1' ? 'phase1' : phase === 'Phase 2' ? 'phase2' : 'phase3'] : 'transparent' }
                                 ]} />
                                 <Text style={[styles.phaseTabText, selectedPhase === phase && styles.phaseTabTextActive]}>
                                     {phase}
@@ -182,10 +289,10 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                 </View>
 
                 <View style={styles.mainContent}>
-                    {/* ── 2x2 ACTION GRID ── */}
+                    {/* Action Grid */}
                     <View style={styles.actionGrid}>
                         <View style={styles.gridRow}>
-                            {ACTION_CARDS.slice(0, 2).map(card => (
+                            {roleData.cards.slice(0, 2).map((card) => (
                                 <TouchableOpacity
                                     key={card.key}
                                     style={[styles.actionCard, { backgroundColor: card.color }]}
@@ -200,22 +307,42 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                                 </TouchableOpacity>
                             ))}
                         </View>
-                        <View style={styles.gridRow}>
-                            {ACTION_CARDS.slice(2, 4).map(card => (
-                                <TouchableOpacity
-                                    key={card.key}
-                                    style={[styles.actionCard, { backgroundColor: card.color }]}
-                                    onPress={() => handleCardPress(card.route)}
-                                    activeOpacity={0.85}
-                                >
-                                    <View style={[styles.actionIconContainer, { backgroundColor: COLORS.white }]}>
-                                        <MaterialCommunityIcons name={card.icon as any} size={28} color={card.color} />
-                                    </View>
-                                    <Text style={styles.actionTitle}>{card.title}</Text>
-                                    <Text style={styles.actionSubtitle}>{card.subtitle}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        {roleData.cards.length > 2 && (
+                            <View style={styles.gridRow}>
+                                {roleData.cards.slice(2, 4).map((card) => (
+                                    <TouchableOpacity
+                                        key={card.key}
+                                        style={[styles.actionCard, { backgroundColor: card.color }]}
+                                        onPress={() => handleCardPress(card.route)}
+                                        activeOpacity={0.85}
+                                    >
+                                        <View style={[styles.actionIconContainer, { backgroundColor: COLORS.white }]}>
+                                            <MaterialCommunityIcons name={card.icon as any} size={28} color={card.color} />
+                                        </View>
+                                        <Text style={styles.actionTitle}>{card.title}</Text>
+                                        <Text style={styles.actionSubtitle}>{card.subtitle}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                        {roleData.cards.length > 4 && (
+                            <View style={styles.gridRow}>
+                                {roleData.cards.slice(4, 6).map((card) => (
+                                    <TouchableOpacity
+                                        key={card.key}
+                                        style={[styles.actionCard, { backgroundColor: card.color }]}
+                                        onPress={() => handleCardPress(card.route)}
+                                        activeOpacity={0.85}
+                                    >
+                                        <View style={[styles.actionIconContainer, { backgroundColor: COLORS.white }]}>
+                                            <MaterialCommunityIcons name={card.icon as any} size={28} color={card.color} />
+                                        </View>
+                                        <Text style={styles.actionTitle}>{card.title}</Text>
+                                        <Text style={styles.actionSubtitle}>{card.subtitle}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                     </View>
 
                     {/* ── SORT TOGGLE ── */}
@@ -367,14 +494,14 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                         </TouchableOpacity>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                        {sortedServices.map(svc => (
+                        {sortedServices.map((svc: any) => (
                             <TouchableOpacity
                                 key={svc.id}
                                 style={[styles.serviceCard, SHADOWS.light]}
                                 onPress={() => navigation.navigate('ServiceProviderDetail', { providerId: svc.id })}
                                 activeOpacity={0.92}
                             >
-                                <View style={[styles.serviceAvatar, { backgroundColor: svc.color }]}>
+                                <View style={[styles.serviceAvatar, { backgroundColor: svc.avatarColor }]}>
                                     <Text style={styles.serviceInitial}>{svc.initial}</Text>
                                 </View>
                                 <Text style={styles.serviceName} numberOfLines={1}>{svc.name}</Text>
@@ -404,7 +531,6 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                         ))}
                     </ScrollView>
 
-                    <View style={{ height: SPACING.xxl }} />
                 </View>
             </ScrollView>
 
@@ -422,7 +548,9 @@ export const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation })
                 onClose={() => setContactSheetVisible(false)}
                 contact={activeContact}
             />
-        </SafeAreaView>
+            {/* Bottom safe area padding for devices with home indicator */}
+            <SafeAreaView edges={['bottom']} />
+        </View>
     );
 };
 
@@ -479,6 +607,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: SPACING.sm,
+        flex: 1,
+    },
+    locationTextWrap: {
+        flex: 1,
     },
     locationLabel: {
         fontSize: 10,
@@ -490,19 +622,35 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         fontWeight: '700',
     },
-    detectButton: {
+    retryChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E3F0FF',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        backgroundColor: '#FFF3E0',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
         borderRadius: BORDER_RADIUS.full,
         gap: 4,
+        marginLeft: 8,
     },
-    detectText: {
-        fontSize: 12,
-        color: COLORS.primary,
+    retryChipText: {
+        fontSize: 11,
+        color: '#E65100',
         fontWeight: '700',
+    },
+    locationErrorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF3E0',
+        borderRadius: BORDER_RADIUS.sm,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: 6,
+        gap: 6,
+        marginBottom: SPACING.sm,
+    },
+    locationErrorText: {
+        fontSize: 11,
+        color: '#E65100',
+        fontWeight: '600',
     },
     // Phase selector
     phaseSelector: {
@@ -921,5 +1069,86 @@ const styles = StyleSheet.create({
     },
     featuredPlaceholder: {
         marginTop: SPACING.sm,
+    },
+    // Restricted Screen
+    restrictedContainer: {
+        flex: 1,
+        backgroundColor: COLORS.white,
+    },
+    restrictedContent: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: SPACING.xl,
+    },
+    restrictedIconWrapper: {
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        backgroundColor: COLORS.primary + '10',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: SPACING.xl,
+        position: 'relative',
+    },
+    radarPulse: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        opacity: 0.2,
+    },
+    restrictedTitle: {
+        fontSize: 28,
+        fontWeight: '900',
+        color: COLORS.text,
+        marginBottom: SPACING.md,
+        textAlign: 'center',
+    },
+    restrictedSubtitle: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        lineHeight: 24,
+        marginBottom: SPACING.xl,
+    },
+    restrictedInfoBox: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surface,
+        padding: SPACING.md,
+        borderRadius: BORDER_RADIUS.md,
+        alignItems: 'center',
+        gap: SPACING.sm,
+        marginBottom: SPACING.xxl,
+    },
+    restrictedInfoText: {
+        flex: 1,
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        lineHeight: 18,
+    },
+    retryButton: {
+        backgroundColor: COLORS.primary,
+        width: '100%',
+        paddingVertical: 16,
+        borderRadius: BORDER_RADIUS.lg,
+        alignItems: 'center',
+        marginBottom: SPACING.md,
+        ...SHADOWS.medium,
+    },
+    retryButtonText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    manualButton: {
+        paddingVertical: 12,
+    },
+    manualButtonText: {
+        color: COLORS.primary,
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

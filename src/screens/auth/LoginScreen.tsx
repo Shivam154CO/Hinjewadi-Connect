@@ -6,7 +6,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    TouchableOpacity
+    TouchableOpacity,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS } from '../../theme/theme';
@@ -21,15 +22,35 @@ export const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) 
     const [useEmail, setUseEmail] = useState(false);
 
     // Destructure everything at the top level of the component
-    const { login, isLoading, bypassAuth } = useAuth();
+    const { login, loginWithEmail, isLoading, bypassAuth } = useAuth();
 
     const handleLogin = async () => {
-        if (useEmail) {
-            navigation.navigate('RoleSelection');
-        } else {
-            if (phoneNumber.length >= 10) {
-                await login(phoneNumber);
+        try {
+            if (useEmail) {
+                if (!email.includes('@')) {
+                    Alert.alert('Error', 'Please enter a valid email');
+                    return;
+                }
+                await loginWithEmail(email);
+                // After email login, if user is new, fetchUserProfile will return null 
+                // and navigators will handle it or we navigate to RoleSelection
+                // But for now, let's assume if it works, they are in
+                navigation.navigate('RoleSelection');
+            } else {
+                if (phoneNumber.length === 10) {
+                    await login(phoneNumber);
+                    navigation.navigate('OTP', { phone: phoneNumber });
+                } else {
+                    Alert.alert('Error', 'Please enter a 10-digit phone number');
+                }
+            }
+        } catch (error: any) {
+            console.error('Login error:', error);
+            if (error.message?.includes('provider') || error.message?.includes('Sms')) {
+                // For provider issues, we let them proceed to the OTP screen to use the dev bypass
                 navigation.navigate('OTP', { phone: phoneNumber });
+            } else {
+                Alert.alert('Error', error.message || 'Login failed');
             }
         }
     };

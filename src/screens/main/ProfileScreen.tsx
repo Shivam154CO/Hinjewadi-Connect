@@ -20,8 +20,8 @@ const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
 import { MainTabScreenProps } from '../../types';
 
-export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = () => {
-    const { user, completeProfile, logout, setRole } = useAuth();
+export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigation }) => {
+    const { user, completeProfile, logout, setRole, updateProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user?.name || '');
     const [selectedArea, setSelectedArea] = useState(user?.area || 'Phase 1');
@@ -123,20 +123,20 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = () => {
                 </View>
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Switch Role</Text>
+                    <Text style={styles.sectionTitle}>Switch Mode</Text>
                     <Text style={styles.sectionSubtitle}>Toggle between looking for rooms, work, or hiring</Text>
 
                     <View style={styles.roleGrid}>
                         <RoleToggle
                             active={user?.role === 'tenant'}
-                            label="Tenant"
+                            label="Room Seeker"
                             icon="home-search"
                             onPress={() => handleSwitchRole('tenant')}
                             color={COLORS.primary}
                         />
                         <RoleToggle
                             active={user?.role === 'worker'}
-                            label="Worker"
+                            label="Work Seeker"
                             icon="briefcase-search"
                             onPress={() => handleSwitchRole('worker')}
                             color={COLORS.success}
@@ -151,6 +151,47 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = () => {
                     </View>
                 </View>
 
+                {user?.role === 'worker' && (
+                    <View style={styles.section}>
+                        <View style={styles.switchRow}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.sectionTitle}>Availability Status</Text>
+                                <Text style={styles.sectionSubtitle}>Are you currently open for new work?</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={[
+                                    styles.customSwitch,
+                                    user?.availability === 'Available' ? styles.switchOn : styles.switchOff
+                                ]}
+                                onPress={() => {
+                                    const newStatus = user?.availability === 'Available' ? 'Busy' : 'Available';
+                                    updateProfile({ availability: newStatus });
+                                }}
+                            >
+                                <View style={[
+                                    styles.switchHandle,
+                                    user?.availability === 'Available' ? styles.handleRight : styles.handleLeft
+                                ]} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
+                {user?.role === 'employer' && (
+                    <TouchableOpacity
+                        style={[styles.section, styles.managePostsButton]}
+                        onPress={() => navigation.navigate('ManagePosts')}
+                    >
+                        <MaterialCommunityIcons name="clipboard-text-outline" size={24} color={COLORS.primary} />
+                        <View style={{ marginLeft: SPACING.md }}>
+                            <Text style={styles.sectionTitle}>Manage My Postings</Text>
+                            <Text style={styles.sectionSubtitle}>View, edit or delete your listings</Text>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.textSecondary} style={{ marginLeft: 'auto' }} />
+                    </TouchableOpacity>
+                )}
+
+                {/* Logout Button */}
                 <TouchableOpacity style={styles.logoutButton} onPress={logout}>
                     <MaterialCommunityIcons name="logout" size={20} color={COLORS.error} />
                     <Text style={styles.logoutText}>Logout</Text>
@@ -335,4 +376,44 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginLeft: SPACING.sm,
     },
+    managePostsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    adminButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E9D5FF',
+    },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    customSwitch: {
+        width: 60,
+        height: 32,
+        borderRadius: 16,
+        padding: 4,
+        justifyContent: 'center',
+    },
+    switchOn: {
+        backgroundColor: COLORS.success,
+    },
+    switchOff: {
+        backgroundColor: COLORS.border,
+    },
+    switchHandle: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: COLORS.white,
+        ...SHADOWS.light,
+    },
+    handleLeft: {
+        alignSelf: 'flex-start',
+    },
+    handleRight: {
+        alignSelf: 'flex-end',
+    }
 });

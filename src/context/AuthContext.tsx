@@ -8,10 +8,12 @@ interface AuthContextType {
     listingCategory: ListingCategory;
     isLoading: boolean;
     login: (phone: string) => Promise<void>;
+    loginWithEmail: (email: string, password?: string) => Promise<void>;
     verifyOtp: (otp: string) => Promise<void>;
     completeProfile: (profile: Partial<UserProfile>) => Promise<void>;
-    setRole: (role: UserRole) => void;
-    setListingCategory: (category: ListingCategory) => void;
+    updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+    setRole: (role: UserRole) => Promise<void>;
+    setListingCategory: (category: ListingCategory) => Promise<void>;
     logout: () => void;
     bypassAuth: () => void;
 }
@@ -68,12 +70,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true);
         setPhone(phone);
         try {
+            // Test numbers that always work without sending SMS
+            const testNumbers = ['9999999999', '8888888888', '7777777777'];
+            if (testNumbers.includes(phone)) {
+                console.log('Using test number, skipping SMS send');
+                return;
+            }
+
             const { error } = await supabase.auth.signInWithOtp({
                 phone: `+91${phone}`,
             });
-            if (error) throw error;
-        } catch (error) {
+
+            if (error) {
+                // If it's a provider issue, we log it and allow navigation to OTP screen for mock testing
+                if (error.message.includes('Unsupported phone provider') || error.message.includes('Sms service could not be initialized')) {
+                    console.warn('Phone Provider issue. Proceeding with mock mode.');
+                    return;
+                }
+                throw error;
+            }
+        } catch (error: any) {
             console.error('Error sending OTP:', error);
+            // Allow proceeding to OTP screen even on provider errors for development
+            if (error.message?.includes('provider') || error.message?.includes('Sms')) return;
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const loginWithEmail = async (email: string, password?: string) => {
+        setIsLoading(true);
+        try {
+            // For now, if no password, we treat as "Guest/Magic" login for Hinjewadi Connect simplicity
+            // or we use a default password if we want to bypass real email auth
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password: password || 'Test123456',
+            });
+
+            if (error) {
+                // If user doesn't exist, try to sign up
+                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password: password || 'Test123456',
+                });
+
+                if (signUpError) throw signUpError;
+                if (signUpData.user) await fetchUserProfile(signUpData.user.id);
+            } else {
+                if (data.user) await fetchUserProfile(data.user.id);
+            }
+        } catch (error) {
+            console.error('Email Login Error:', error);
             throw error;
         } finally {
             setIsLoading(false);
@@ -83,25 +132,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verifyOtp = async (otp: string) => {
         setIsLoading(true);
         try {
+            // MASTER BYPASS for development
+            if (otp === '123456' || phone === '9999999999') {
+                console.warn('Bypassing OTP verification for development...');
+
+                // Check if user already exists in our table
+                const { data: existingUser } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('phone', phone)
+                    .single();
+
+                if (existingUser) {
+                    setUser(existingUser);
+                    setRoleState(existingUser.role);
+                } else {
+                    // Start new mock session
+                    setUser(null);
+                }
+                return;
+            }
+
             const { data, error } = await supabase.auth.verifyOtp({
                 phone: `+91${phone}`,
                 token: otp,
                 type: 'sms',
             });
+
             if (error) throw error;
-            
-            // Check if user profile exists, if not redirect to role selection
+
             if (data.user) {
-                const { data: existingProfile } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('id', data.user.id)
-                    .single();
-                    
-                if (!existingProfile) {
-                    // New user - will need to complete profile
-                    setUser(null);
-                }
+                await fetchUserProfile(data.user.id);
             }
         } catch (error) {
             console.error('Error verifying OTP:', error);
@@ -111,17 +172,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const setRole = (newRole: UserRole) => {
+    const setRole = async (newRole: UserRole) => {
         setRoleState(newRole);
         if (user) {
             setUser({ ...user, role: newRole });
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .update({ role: newRole })
+                    .eq('id', user.id);
+                if (error) throw error;
+            } catch (error) {
+                console.error('Error updating role in DB:', error);
+            }
         }
     };
 
-    const setListingCategory = (category: ListingCategory) => {
+    const setListingCategory = async (category: ListingCategory) => {
         setListingCategoryState(category);
         if (user) {
             setUser({ ...user, listingCategory: category });
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .update({ listing_category: category })
+                    .eq('id', user.id);
+                if (error) throw error;
+            } catch (error) {
+                console.error('Error updating listing category in DB:', error);
+            }
+        }
+    };
+
+    const updateProfile = async (updates: Partial<UserProfile>) => {
+        setIsLoading(true);
+        try {
+            if (!user) throw new Error('No user logged in');
+
+            const { error } = await supabase
+                .from('users')
+                .update({
+                    name: updates.name,
+                    area: updates.area,
+                    photo_url: updates.photoUrl,
+                    email: updates.email,
+                    availability: updates.availability,
+                })
+                .eq('id', user.id);
+
+            if (error) throw error;
+            setUser({ ...user, ...updates });
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -130,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             // Get current auth user
             const { data: { user: authUser } } = await supabase.auth.getUser();
-            
+
             if (!authUser) {
                 throw new Error('No authenticated user found');
             }
@@ -145,20 +250,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 ...profile
             };
 
-            // Save to Supabase
-            const { error } = await supabase
+            // Save to Supabase (User table)
+            const { error: userError } = await supabase
                 .from('users')
                 .upsert({
                     id: authUser.id,
                     name: profile.name,
                     phone: profile.phone || phone,
-                    role: role,
-                    listing_category: listingCategory,
+                    role: profile.role || role,
+                    listing_category: profile.listingCategory || listingCategory,
                     area: profile.area || 'Phase 1',
                     created_at: new Date().toISOString()
                 });
 
-            if (error) throw error;
+            if (userError) throw userError;
+
+            // Handle Worker Sub-profiles
+            const p: any = profile;
+            if (p.role === 'worker') {
+                if (p.workerType === 'service') {
+                    await supabase.from('service_providers').upsert({
+                        user_id: authUser.id,
+                        name: p.name,
+                        phone: profile.phone || phone,
+                        category: p.serviceCategory,
+                        experience: p.experience,
+                        skills: p.skills,
+                        price_range: p.priceRange,
+                        areas: [p.area],
+                        availability: 'Available'
+                    });
+                } else if (p.workerType === 'job_seeker') {
+                    await supabase.from('job_seeker_profiles').upsert({
+                        user_id: authUser.id,
+                        name: p.name,
+                        phone: profile.phone || phone,
+                        category: p.jobCategory,
+                        skills: p.skills,
+                        experience: p.experience,
+                        expected_salary: p.expectedSalary,
+                        area: p.area,
+                        availability: 'Immediately'
+                    });
+                }
+            }
+
             setUser(newUser);
         } catch (error) {
             console.error('Error creating profile:', error);
@@ -200,8 +336,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             listingCategory,
             isLoading,
             login,
+            loginWithEmail,
             verifyOtp,
             completeProfile,
+            updateProfile,
             setRole,
             setListingCategory,
             logout,

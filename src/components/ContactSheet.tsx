@@ -11,6 +11,10 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../theme/theme';
 import { ContactInfo, executeContact } from '../utils/contactUtils';
+import { roomService } from '../services/roomService';
+import { jobService } from '../services/jobService';
+import { providerService } from '../services/providerService';
+import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -57,11 +61,35 @@ const CONTACT_OPTIONS = [
 ];
 
 export const ContactSheet: React.FC<ContactSheetProps> = ({ visible, onClose, contact }) => {
-    const handleAction = (action: typeof CONTACT_OPTIONS[number]) => {
+    const { user } = useAuth();
+
+    const handleAction = async (action: typeof CONTACT_OPTIONS[number]) => {
         if (action.disabled) {
             executeContact('chat', contact);
             return;
         }
+
+        // Track Lead (New robust tracking)
+        try {
+            if (contact.id && contact.ownerId) {
+                const inquirerId = user?.id || '';
+                if (contact.context === 'room') {
+                    await roomService.recordLead(contact.id, contact.ownerId, inquirerId);
+                } else if (contact.context === 'job') {
+                    await jobService.recordLead(contact.id, contact.ownerId, inquirerId);
+                } else if (contact.context === 'service') {
+                    await providerService.recordLead(contact.id, contact.ownerId, inquirerId);
+                }
+            } else if (contact.id) {
+                // Fallback for simple increment if ownerId is missing
+                if (contact.context === 'room') await roomService.incrementLeads(contact.id);
+                else if (contact.context === 'job') await jobService.incrementLeads(contact.id);
+                else if (contact.context === 'service') await providerService.incrementLeads(contact.id);
+            }
+        } catch (e) {
+            console.error('Failed to track lead:', e);
+        }
+
         onClose();
         // Small delay so modal closes smoothly before action
         setTimeout(() => executeContact(action.key, contact), 300);

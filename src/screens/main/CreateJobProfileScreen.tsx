@@ -7,11 +7,13 @@ import {
     TouchableOpacity,
     TextInput,
     Alert,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { MainStackScreenProps, JobCategory } from '../../types';
+import { MainStackScreenProps, JobCategory, JobSeekerProfile } from '../../types';
+import { jobService } from '../../services/jobService';
 
 const JOB_CATEGORIES: { key: JobCategory; label: string; icon: string }[] = [
     { key: 'Peon', label: 'Peon', icon: 'account' },
@@ -49,6 +51,7 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
     const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
     const [availability, setAvailability] = useState<typeof AVAILABILITY_OPTIONS[number]>('Immediately');
     const [description, setDescription] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const toggleSkill = (skill: string) => {
         setSelectedSkills(prev =>
@@ -58,17 +61,39 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
         );
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!name.trim() || !phone.trim() || !selectedCategory || !selectedArea) {
             Alert.alert('Incomplete', 'Please fill in all required fields (Name, Phone, Category, Area).');
             return;
         }
-        // In production: POST to API
-        Alert.alert(
-            'Profile Created! 🎉',
-            'Your job seeker profile is now live. Employers can find and contact you.',
-            [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+
+        setLoading(true);
+        try {
+            const profile: Omit<JobSeekerProfile, 'id' | 'createdAt'> = {
+                name,
+                phone,
+                category: selectedCategory,
+                skills: selectedSkills,
+                experience,
+                expectedSalary,
+                area: selectedArea,
+                availability,
+                description,
+            };
+
+            await jobService.createJobSeekerProfile(profile);
+
+            Alert.alert(
+                'Profile Created! 🎉',
+                'Your job seeker profile is now live. Employers can find and contact you.',
+                [{ text: 'OK', onPress: () => navigation.goBack() }]
+            );
+        } catch (error) {
+            console.error('Error creating job seeker profile:', error);
+            Alert.alert('Error', 'Failed to create profile. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const availableSkills = selectedCategory ? SKILLS_BY_CATEGORY[selectedCategory] : [];
@@ -275,9 +300,19 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
                     />
 
                     {/* Submit */}
-                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                        <MaterialCommunityIcons name="check-circle" size={22} color={COLORS.white} />
-                        <Text style={styles.submitButtonText}>Create Job Profile</Text>
+                    <TouchableOpacity
+                        style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color={COLORS.white} />
+                        ) : (
+                            <>
+                                <MaterialCommunityIcons name="check-circle" size={22} color={COLORS.white} />
+                                <Text style={styles.submitButtonText}>Create Job Profile</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     {/* Tip */}

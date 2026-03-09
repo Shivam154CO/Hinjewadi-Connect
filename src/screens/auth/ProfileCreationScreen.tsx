@@ -13,7 +13,7 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
-import { AuthScreenProps, ListingCategory } from '../../types';
+import { AuthScreenProps, ListingCategory, ServiceCategory, JobCategory } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
@@ -46,22 +46,49 @@ const getListingCategoryIcon = (category: ListingCategory): string => {
     }
 };
 
+const SERVICE_CATEGORIES: ServiceCategory[] = ['Maid', 'Cook', 'Cleaner', 'Laundry', 'Driver'];
+const JOB_CATEGORIES: JobCategory[] = ['Peon', 'Guard', 'Office Boy', 'Watchman', 'Helper', 'Security', 'Driver', 'Cook'];
+
 export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>> = ({ route, navigation }) => {
-    const { role, listingCategory } = route.params;
+    const { role, listingCategory, workerType } = route.params;
     const [name, setName] = useState('');
     const [selectedArea, setSelectedArea] = useState('Phase 1');
+
+    // Worker Specific State
+    const [serviceCategory, setServiceCategory] = useState<ServiceCategory>('Maid');
+    const [jobCategory, setJobCategory] = useState<JobCategory>('Security');
+    const [experience, setExperience] = useState('');
+    const [salary, setSalary] = useState('');
+    const [skills, setSkills] = useState('');
+
     const { completeProfile, isLoading } = useAuth();
 
     const handleComplete = async () => {
-        if (name.trim()) {
-            await completeProfile({
-                name,
-                area: selectedArea,
-                role: role,
-                listingCategory: listingCategory || null
-            });
-            // Navigation to home will be handled by Auth state change
+        if (!name.trim()) return;
+
+        const profileData: any = {
+            name,
+            area: selectedArea,
+            role,
+            listingCategory: listingCategory || null,
+        };
+
+        if (role === 'worker') {
+            profileData.workerType = workerType;
+            if (workerType === 'service') {
+                profileData.serviceCategory = serviceCategory;
+                profileData.experience = experience;
+                profileData.skills = skills.split(',').map(s => s.trim()).filter(s => s);
+                profileData.priceRange = salary;
+            } else if (workerType === 'job_seeker') {
+                profileData.jobCategory = jobCategory;
+                profileData.experience = experience;
+                profileData.skills = skills.split(',').map(s => s.trim()).filter(s => s);
+                profileData.expectedSalary = salary;
+            }
         }
+
+        await completeProfile(profileData);
     };
 
     return (
@@ -80,10 +107,10 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                     {role === 'employer' && listingCategory && (
                         <View style={styles.categoryBanner}>
                             <View style={styles.categoryBannerIcon}>
-                                <MaterialCommunityIcons 
-                                    name={getListingCategoryIcon(listingCategory) as any} 
-                                    size={24} 
-                                    color={COLORS.secondary} 
+                                <MaterialCommunityIcons
+                                    name={getListingCategoryIcon(listingCategory) as any}
+                                    size={24}
+                                    color={COLORS.secondary}
                                 />
                             </View>
                             <View style={styles.categoryBannerText}>
@@ -109,6 +136,76 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                             value={name}
                             onChangeText={setName}
                         />
+
+                        {role === 'worker' && workerType === 'service' && (
+                            <>
+                                <Text style={styles.label}>What service do you provide?</Text>
+                                <View style={styles.chipContainer}>
+                                    {SERVICE_CATEGORIES.map(cat => (
+                                        <TouchableOpacity
+                                            key={cat}
+                                            style={[styles.chip, serviceCategory === cat && styles.chipActive]}
+                                            onPress={() => setServiceCategory(cat)}
+                                        >
+                                            <Text style={[styles.chipText, serviceCategory === cat && styles.chipTextActive]}>{cat}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <AppTextInput
+                                    label="Experience (e.g. 5 Years)"
+                                    placeholder="How long have you been working?"
+                                    value={experience}
+                                    onChangeText={setExperience}
+                                />
+                                <AppTextInput
+                                    label="Skills (comma separated)"
+                                    placeholder="Cleaning, Cooking, Ironing..."
+                                    value={skills}
+                                    onChangeText={setSkills}
+                                />
+                                <AppTextInput
+                                    label="Expected Price / Monthly Charge"
+                                    placeholder="₹3,000 - ₹5,000"
+                                    value={salary}
+                                    onChangeText={setSalary}
+                                />
+                            </>
+                        )}
+
+                        {role === 'worker' && workerType === 'job_seeker' && (
+                            <>
+                                <Text style={styles.label}>What job are you looking for?</Text>
+                                <View style={styles.chipContainer}>
+                                    {JOB_CATEGORIES.map(cat => (
+                                        <TouchableOpacity
+                                            key={cat}
+                                            style={[styles.chip, jobCategory === cat && styles.chipActive]}
+                                            onPress={() => setJobCategory(cat)}
+                                        >
+                                            <Text style={[styles.chipText, jobCategory === cat && styles.chipTextActive]}>{cat}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <AppTextInput
+                                    label="Your Experience"
+                                    placeholder="e.g. 2 years as Security"
+                                    value={experience}
+                                    onChangeText={setExperience}
+                                />
+                                <AppTextInput
+                                    label="Education / Skills"
+                                    placeholder="10th Pass, Guard Training..."
+                                    value={skills}
+                                    onChangeText={setSkills}
+                                />
+                                <AppTextInput
+                                    label="Expected Monthly Salary"
+                                    placeholder="₹15,000"
+                                    value={salary}
+                                    onChangeText={setSalary}
+                                />
+                            </>
+                        )}
 
                         <Text style={styles.label}>Primary Working/Living Area</Text>
                         <View style={styles.areaContainer}>
@@ -258,4 +355,30 @@ const styles = StyleSheet.create({
     completeButton: {
         marginTop: SPACING.lg,
     },
+    chipContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: SPACING.lg,
+    },
+    chip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: COLORS.surface,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    chipActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    chipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.textSecondary,
+    },
+    chipTextActive: {
+        color: COLORS.white,
+    }
 });

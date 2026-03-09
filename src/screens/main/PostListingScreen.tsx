@@ -13,8 +13,10 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppTextInput } from '../../components/AppTextInput';
-import { MainStackScreenProps } from '../../types';
+import { MainStackScreenProps, Room } from '../../types';
 import { checkForSpam } from '../../utils/trustSafetyUtils';
+import { roomService } from '../../services/roomService';
+import { useAuth } from '../../context/AuthContext';
 
 const TYPES = ['Room', 'PG', 'Flat'];
 const FURNISHING = ['Unfurnished', 'Semi-furnished', 'Fully-furnished'];
@@ -27,10 +29,12 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
     const [furnishing, setFurnishing] = useState('Semi-furnished');
     const [gender, setGender] = useState('Any');
 
+    const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [price, setPrice] = useState('');
     const [deposit, setDeposit] = useState('');
     const [description, setDescription] = useState('');
+    const [contactPhone, setContactPhone] = useState(user?.phone || '');
     const [loading, setLoading] = useState(false);
 
     const handlePost = () => {
@@ -56,15 +60,38 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
         doPost();
     };
 
-    const doPost = () => {
+    const doPost = async () => {
+        if (!user) return;
+
         setLoading(true);
-        // Mock API call
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            const newRoom: Omit<Room, 'id' | 'createdAt'> = {
+                ownerId: user.id,
+                title,
+                description,
+                price: parseInt(price),
+                deposit: parseInt(deposit),
+                area: phase,
+                type: type as any,
+                furnishing: furnishing as any,
+                genderPreference: gender as any,
+                amenities: [], // Add amenity selection later
+                images: [], // Handled by storage utility later
+                status: 'Available',
+                contactPhone: contactPhone,
+            };
+
+            await roomService.createRoom(newRoom);
+
             Alert.alert('Success', 'Your listing has been posted successfully!', [
                 { text: 'OK', onPress: () => navigation.goBack() }
             ]);
-        }, 1500);
+        } catch (error) {
+            console.error('Error posting listing:', error);
+            Alert.alert('Error', 'Failed to post listing. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderSelector = (label: string, options: string[], value: string, setValue: (v: string) => void) => (

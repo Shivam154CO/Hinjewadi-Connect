@@ -1,9 +1,4 @@
--- =====================================================
--- HINJEWADI CONNECT - DATABASE SCHEMA
--- Run this in your Supabase SQL Editor
--- =====================================================
-
--- 1. USERS TABLE (extends Supabase auth.users)
+-- 1. USERS TABLE
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
@@ -13,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     area TEXT CHECK (area IN ('Phase 1', 'Phase 2', 'Phase 3')) DEFAULT 'Phase 1',
     photo_url TEXT,
     email TEXT,
+    availability TEXT CHECK (availability IN ('Available', 'Busy')) DEFAULT 'Available',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -45,6 +41,8 @@ CREATE TABLE IF NOT EXISTS public.rooms (
     images TEXT[] DEFAULT '{}',
     status TEXT CHECK (status IN ('Available', 'Occupied')) DEFAULT 'Available',
     contact_phone TEXT NOT NULL,
+    views_count INTEGER DEFAULT 0,
+    leads_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -81,6 +79,8 @@ CREATE TABLE IF NOT EXISTS public.jobs (
     urgent BOOLEAN DEFAULT false,
     requirements TEXT[] DEFAULT '{}',
     benefits TEXT[] DEFAULT '{}',
+    views_count INTEGER DEFAULT 0,
+    leads_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -148,6 +148,8 @@ CREATE TABLE IF NOT EXISTS public.service_providers (
     skills TEXT[] DEFAULT '{}',
     price_range TEXT,
     avatar_color TEXT DEFAULT '#E8D5F5',
+    views_count INTEGER DEFAULT 0,
+    leads_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -232,7 +234,7 @@ CREATE POLICY "Users can delete own blocked users" ON public.blocked_users
 -- 9. TRUST_PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.trust_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE UNIQUE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     verification_status TEXT CHECK (verification_status IN ('unverified', 'pending', 'verified', 'rejected')) DEFAULT 'unverified',
     verified_at TIMESTAMPTZ,
     trust_score INTEGER DEFAULT 50 CHECK (trust_score >= 0 AND trust_score <= 100),
@@ -289,3 +291,44 @@ CREATE POLICY "Anyone can upload room images" ON storage.objects
 
 CREATE POLICY "Users can delete own room images" ON storage.objects
     FOR DELETE USING (bucket_id = 'room-images');
+-- 10. LEADS TABLE (Tracks who contacted whom)
+CREATE TABLE IF NOT EXISTS public.leads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    inquirer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    owner_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    listing_id UUID NOT NULL,
+    listing_type TEXT NOT NULL CHECK (listing_type IN ('room', 'job', 'service')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Owners can view their leads" ON public.leads
+    FOR SELECT USING (auth.uid() = owner_id);
+
+CREATE POLICY "Anyone can record a lead" ON public.leads
+    FOR INSERT WITH CHECK (true);
+
+-- Updated increment function to also record lead details
+CREATE OR REPLACE FUNCTION public.record_lead(
+    p_listing_id UUID, 
+    p_listing_type TEXT, 
+    p_owner_id UUID, 
+    p_inquirer_id UUID
+)
+RETURNS void AS $$
+BEGIN
+    -- Increment count on the target table
+    IF p_listing_type = 'room' THEN
+        UPDATE public.rooms SET leads_count = leads_count + 1 WHERE id = p_listing_id;
+    ELSIF p_listing_type = 'job' THEN
+        UPDATE public.jobs SET leads_count = leads_count + 1 WHERE id = p_listing_id;
+    ELSIF p_listing_type = 'service' THEN
+        UPDATE public.service_providers SET leads_count = leads_count + 1 WHERE id = p_listing_id;
+    END IF;
+
+    -- Record the lead detail
+    INSERT INTO public.leads (listing_id, listing_type, owner_id, inquirer_id)
+    VALUES (p_listing_id, p_listing_type, p_owner_id, p_inquirer_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -7,11 +7,13 @@ import {
     TouchableOpacity,
     TextInput,
     Alert,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { MainStackScreenProps, ServiceCategory } from '../../types';
+import { MainStackScreenProps, ServiceCategory, ServiceProvider } from '../../types';
+import { providerService } from '../../services/providerService';
 
 const SERVICE_CATEGORIES: { key: ServiceCategory; label: string; icon: string }[] = [
     { key: 'Maid', label: 'Maid', icon: 'broom' },
@@ -43,6 +45,7 @@ export const CreateServiceProfileScreen: React.FC<MainStackScreenProps<'CreateSe
     const [priceRange, setPriceRange] = useState('');
     const [description, setDescription] = useState('');
     const [availability, setAvailability] = useState<'Available' | 'Busy' | 'Paused'>('Available');
+    const [loading, setLoading] = useState(false);
 
     const toggleArea = (area: string) => {
         setSelectedAreas(prev =>
@@ -60,15 +63,40 @@ export const CreateServiceProfileScreen: React.FC<MainStackScreenProps<'CreateSe
         );
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!name.trim() || !phone.trim() || !selectedCategory || selectedAreas.length === 0) {
             Alert.alert('Incomplete', 'Please fill in all required fields.');
             return;
         }
-        // In production: POST to API
-        Alert.alert('Success!', 'Your service profile has been created. Customers can now find you!', [
-            { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
+
+        setLoading(true);
+        try {
+            const provider: Omit<ServiceProvider, 'id' | 'rating' | 'totalRatings' | 'reviews' | 'createdAt' | 'initial'> = {
+                name,
+                phone,
+                whatsapp: whatsapp || phone,
+                category: selectedCategory,
+                experience,
+                areas: selectedAreas,
+                availability,
+                workingHours,
+                description,
+                skills: selectedSkills,
+                priceRange,
+                avatarColor: '#E8D5F5',
+            };
+
+            await providerService.createProvider(provider);
+
+            Alert.alert('Success!', 'Your service profile has been created. Customers can now find you!', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+            ]);
+        } catch (error) {
+            console.error('Error creating service profile:', error);
+            Alert.alert('Error', 'Failed to create profile. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const availableSkills = selectedCategory ? SKILLS_BY_CATEGORY[selectedCategory] : [];
@@ -283,9 +311,19 @@ export const CreateServiceProfileScreen: React.FC<MainStackScreenProps<'CreateSe
                     />
 
                     {/* Submit */}
-                    <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                        <MaterialCommunityIcons name="check-circle" size={20} color={COLORS.white} />
-                        <Text style={styles.submitButtonText}>Create Service Profile</Text>
+                    <TouchableOpacity
+                        style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color={COLORS.white} />
+                        ) : (
+                            <>
+                                <MaterialCommunityIcons name="check-circle" size={20} color={COLORS.white} />
+                                <Text style={styles.submitButtonText}>Create Service Profile</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
 
                     <View style={{ height: SPACING.xl }} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
@@ -16,6 +17,7 @@ import { ContactInfo } from '../../utils/contactUtils';
 import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
 import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser } from '../../utils/trustSafetyUtils';
+import { providerService } from '../../services/providerService';
 
 // Mock data — in production this would come from an API
 const MOCK_PROVIDER: ServiceProvider = {
@@ -83,7 +85,9 @@ const ReviewCard = ({ review }: { review: ServiceReview }) => (
 );
 
 export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'ServiceProviderDetail'>> = ({ navigation, route }) => {
-    const provider = MOCK_PROVIDER; // In production: fetch by route.params.providerId
+    const { providerId } = route.params;
+    const [provider, setProvider] = useState<ServiceProvider | null>(null);
+    const [loading, setLoading] = useState(true);
     const [showRateForm, setShowRateForm] = useState(false);
     const [userRating, setUserRating] = useState(0);
     const [userComment, setUserComment] = useState('');
@@ -91,10 +95,51 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
     const [contactSheetVisible, setContactSheetVisible] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
 
+    useEffect(() => {
+        fetchProvider();
+    }, [providerId]);
+
+    const fetchProvider = async () => {
+        try {
+            setLoading(true);
+            const data = await providerService.getProviderById(providerId);
+            if (data) {
+                setProvider(data);
+                // Increment View
+                providerService.incrementViews(providerId).catch(() => { });
+            }
+        } catch (error) {
+            console.error('Failed to fetch provider:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    if (!provider) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <Text style={styles.errorText}>Provider not found.</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Text style={styles.backLink}>Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
     const providerContact: ContactInfo = {
+        id: provider.id,
         name: provider.name,
         phone: provider.phone,
         whatsapp: provider.whatsapp,
+        ownerId: provider.userId,
         context: 'service',
         contextTitle: provider.category,
     };
@@ -106,12 +151,12 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
         setUserComment('');
     };
 
-    const statusColors = {
+    const statusColors: Record<string, { bg: string; text: string }> = {
         Available: { bg: '#E8F5E9', text: COLORS.success },
         Busy: { bg: '#FFF3E0', text: '#FF9800' },
         Paused: { bg: '#FFEBEE', text: '#EF5350' },
     };
-    const status = statusColors[provider.availability];
+    const status = statusColors[provider.availability] || statusColors.Available;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -322,6 +367,20 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F5F3FF',
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        marginBottom: 10,
+    },
+    backLink: {
+        color: COLORS.primary,
+        fontWeight: '700',
     },
     header: {
         flexDirection: 'row',

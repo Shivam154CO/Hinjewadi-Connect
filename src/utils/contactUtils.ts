@@ -68,9 +68,11 @@ export const sendSMS = (phone: string, message?: string) => {
 export type ContactAction = 'call' | 'whatsapp' | 'sms' | 'chat';
 
 export interface ContactInfo {
+    id?: string;
     name: string;
     phone: string;
     whatsapp?: string;
+    ownerId?: string;
     context?: 'room' | 'job' | 'service' | 'general';
     contextTitle?: string;
     contextCompany?: string;

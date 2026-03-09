@@ -47,8 +47,8 @@ interface ListingCategoryCardProps {
     color: string;
 }
 
-const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({ 
-    title, description, icon, category, onSelect, color 
+const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({
+    title, description, icon, category, onSelect, color
 }) => (
     <TouchableOpacity
         style={[styles.categoryCard, SHADOWS.light]}
@@ -69,20 +69,31 @@ const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({
 export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = ({ navigation }) => {
     const { setRole, setListingCategory } = useAuth();
     const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+    const [workerType, setWorkerType] = useState<'service' | 'job_seeker' | null>(null);
 
     const handleRoleSelect = (role: UserRole) => {
         setSelectedRole(role);
-        
+
         // For employer role, we need to show category selection first
         if (role === 'employer') {
-            // Don't navigate yet - show category selection
             return;
         }
-        
-        // For tenant and worker, set role and navigate
+
+        // For worker, we need to show worker type selection
+        if (role === 'worker') {
+            return;
+        }
+
+        // For tenant, set role and navigate
         setRole(role);
         setListingCategory(null);
         navigation.navigate('ProfileCreation', { role });
+    };
+
+    const handleWorkerTypeSelect = (type: 'service' | 'job_seeker') => {
+        setWorkerType(type);
+        setRole('worker');
+        navigation.navigate('ProfileCreation', { role: 'worker', workerType: type });
     };
 
     const handleCategorySelect = (category: ListingCategory) => {
@@ -95,6 +106,7 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
 
     const handleBack = () => {
         setSelectedRole(null);
+        setWorkerType(null);
     };
 
     // Show listing category selection for employer role
@@ -143,6 +155,43 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
                         <Text style={styles.footerText}>
                             You can always switch your role later in settings
                         </Text>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
+
+    // Show worker type selection view
+    if (selectedRole === 'worker') {
+        return (
+            <SafeAreaView style={styles.container}>
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                            <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.text} />
+                        </TouchableOpacity>
+                        <Text style={styles.title}>What kind of work?</Text>
+                        <Text style={styles.subtitle}>Tell us how you want to be discovered</Text>
+                    </View>
+
+                    <View style={styles.list}>
+                        <ListingCategoryCard
+                            title="Individual Service"
+                            description="Maid, Cook, Cleaner, Driver, etc."
+                            icon="account-wrench-outline"
+                            category={'service' as any}
+                            onSelect={() => handleWorkerTypeSelect('service')}
+                            color={COLORS.success}
+                        />
+
+                        <ListingCategoryCard
+                            title="Looking for Job"
+                            description="Security, Office Boy, Guard, Helper, etc."
+                            icon="account-search-outline"
+                            category={'job_seeker' as any}
+                            onSelect={() => handleWorkerTypeSelect('job_seeker')}
+                            color={COLORS.primary}
+                        />
                     </View>
                 </ScrollView>
             </SafeAreaView>

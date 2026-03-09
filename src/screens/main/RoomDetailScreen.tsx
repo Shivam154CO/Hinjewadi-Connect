@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,38 +6,75 @@ import {
     ScrollView,
     TouchableOpacity,
     Image,
-    Share
+    Share,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { executeContact, ContactInfo } from '../../utils/contactUtils';
-
-import { MainStackScreenProps } from '../../types';
+import { MainStackScreenProps, Room } from '../../types';
+import { roomService } from '../../services/roomService';
+import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
+import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
+import { confirmBlock, blockUser } from '../../utils/trustSafetyUtils';
 
 export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({ route, navigation }) => {
-    // Mock data for now
-    const room = {
-        id: '1',
-        title: 'Spacious 1RK near IT Park',
-        description: 'Beautiful 1RK apartment with attached bathroom and balcony. 24/7 water supply, power backup, and security. Walking distance from major IT companies in Phase 1.',
-        price: 8500,
-        area: 'Phase 1',
-        type: 'Room',
-        amenities: ['Wifi', 'Water Purifier', 'Geyser', 'Security', 'Parking', 'Fridge'],
-        contactPhone: '9876543210'
+    const { roomId } = route.params;
+    const [room, setRoom] = useState<Room | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [isSaved, setIsSaved] = useState(false);
+    const [isOccupied, setIsOccupied] = useState(false);
+    const [reportVisible, setReportVisible] = useState(false);
+
+    useEffect(() => {
+        fetchRoom();
+    }, [roomId]);
+
+    const fetchRoom = async () => {
+        try {
+            setLoading(true);
+            const data = await roomService.getRoomById(roomId);
+            if (data) {
+                setRoom(data);
+                setIsOccupied(data.status === 'Occupied');
+                // Increment View
+                roomService.incrementViews(roomId).catch(() => { });
+            }
+        } catch (error) {
+            console.error('Failed to fetch room:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const [isSaved, setIsSaved] = React.useState(false);
-    const [isOccupied, setIsOccupied] = React.useState(false);
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
 
-    // Mock: check if current user is owner
-    const isOwner = true; // In real app, check user.id === room.ownerId
+    if (!room) {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <Text style={styles.errorText}>Room listing not found.</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Text style={styles.backLink}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    const isOwner = false; // logic for owner comparison
 
     const roomContact: ContactInfo = {
+        id: room.id,
         name: 'Room Owner',
         phone: room.contactPhone,
+        ownerId: room.ownerId,
         context: 'room',
         contextTitle: room.title,
     };
@@ -129,18 +166,18 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                         <View style={styles.priceDivider} />
                         <View>
                             <Text style={styles.priceLabel}>Security Deposit</Text>
-                            <Text style={styles.deposit}>₹15,000</Text>
+                            <Text style={styles.deposit}>₹{room.deposit.toLocaleString()}</Text>
                         </View>
                     </View>
 
                     <View style={styles.quickInfoRow}>
                         <View style={styles.infoChip}>
                             <MaterialCommunityIcons name="sofa-outline" size={20} color={COLORS.primary} />
-                            <Text style={styles.infoChipText}>Semi-furnished</Text>
+                            <Text style={styles.infoChipText}>{room.furnishing}</Text>
                         </View>
                         <View style={styles.infoChip}>
                             <MaterialCommunityIcons name="account-group-outline" size={20} color={COLORS.primary} />
-                            <Text style={styles.infoChipText}>Any Gender</Text>
+                            <Text style={styles.infoChipText}>{room.genderPreference}</Text>
                         </View>
                     </View>
 
@@ -166,6 +203,34 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                             <Text style={styles.safetySubtitle}>No brokers involved. Contact the owner directly for a visit.</Text>
                         </View>
                     </View>
+
+                    {/* Trust & Verification */}
+                    <View style={[styles.section, { padding: 0, overflow: 'hidden', marginTop: SPACING.xl, backgroundColor: 'transparent' }]}>
+                        <TrustInfoCard
+                            verificationStatus="verified"
+                            trustScore={75}
+                            totalReviews={12}
+                            averageRating={4.2}
+                            joinedAt="2024-10-20"
+                        />
+                    </View>
+
+                    {/* Report & Safety */}
+                    <View style={[styles.section, { marginTop: SPACING.lg, padding: SPACING.md, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.light }]}>
+                        <View style={styles.sectionHeaderRow}>
+                            <MaterialCommunityIcons name="shield-outline" size={20} color={COLORS.textSecondary} />
+                            <Text style={styles.sectionTitle}>Safety</Text>
+                        </View>
+                        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: SPACING.sm }}>
+                            Something wrong with this listing?
+                        </Text>
+                        <ReportBlockActions
+                            onReport={() => setReportVisible(true)}
+                            onBlock={() => confirmBlock('Owner', async () => {
+                                await blockUser('currentUser', room.ownerId, 'Owner', room.contactPhone, 'Manually blocked');
+                            })}
+                        />
+                    </View>
                 </View>
                 <View style={{ height: 100 }} />
             </ScrollView>
@@ -181,6 +246,18 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                     textStyle={{ fontSize: 18 }}
                 />
             </View>
+
+            <ReportSheet
+                visible={reportVisible}
+                onClose={() => setReportVisible(false)}
+                targetId={room.id}
+                targetType="room"
+                targetName={room.title}
+                reporterId="currentUser"
+                targetUserId={room.ownerId}
+                targetUserName="Owner"
+                targetUserPhone={room.contactPhone}
+            />
         </View>
     );
 };
@@ -189,6 +266,19 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.white,
+    },
+    center: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        marginBottom: 10,
+    },
+    backLink: {
+        color: COLORS.primary,
+        fontWeight: '700',
     },
     imageGallery: {
         height: 300,
@@ -356,8 +446,14 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: COLORS.textSecondary,
         lineHeight: 24,
-        marginBottom: SPACING.xl,
     },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: SPACING.sm,
+    },
+    section: {},
     amenitiesGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',

@@ -8,6 +8,7 @@ import { ServiceProviderDetailScreen } from '../screens/main/ServiceProviderDeta
 import { CreateServiceProfileScreen } from '../screens/main/CreateServiceProfileScreen';
 import { JobDetailScreen } from '../screens/main/JobDetailScreen';
 import { CreateJobProfileScreen } from '../screens/main/CreateJobProfileScreen';
+import { ManagePostsScreen } from '../screens/main/ManagePostsScreen';
 import { COLORS } from '../theme/theme';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -27,6 +28,7 @@ export const MainStack = () => {
             <Stack.Screen name="CreateServiceProfile" component={CreateServiceProfileScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
             <Stack.Screen name="CreateJobProfile" component={CreateJobProfileScreen} />
+            <Stack.Screen name="ManagePosts" component={ManagePostsScreen} />
         </Stack.Navigator>
     );
 };

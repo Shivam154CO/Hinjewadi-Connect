@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
@@ -15,6 +16,7 @@ import { ContactInfo } from '../../utils/contactUtils';
 import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
 import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser, addToBlockedList } from '../../utils/trustSafetyUtils';
+import { jobService } from '../../services/jobService';
 
 // Mock — in production fetched by route.params.jobId
 const MOCK_JOB: Job = {
@@ -48,14 +50,57 @@ const MOCK_JOB: Job = {
     ],
 };
 
-export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ navigation }) => {
-    const job = MOCK_JOB;
+export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ route, navigation }) => {
+    const { jobId } = route.params;
+    const [job, setJob] = useState<Job | null>(null);
+    const [loading, setLoading] = useState(true);
     const [contactSheetVisible, setContactSheetVisible] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
 
+    useEffect(() => {
+        fetchJob();
+    }, [jobId]);
+
+    const fetchJob = async () => {
+        try {
+            setLoading(true);
+            const data = await jobService.getJobById(jobId);
+            if (data) {
+                setJob(data);
+                // Increment View
+                jobService.incrementViews(jobId).catch(() => { });
+            }
+        } catch (error) {
+            console.error('Failed to fetch job:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    if (!job) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <Text style={styles.errorText}>Job listing not found.</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Text style={styles.backLink}>Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
     const jobContact: ContactInfo = {
+        id: job.id,
         name: job.company,
         phone: job.contactPhone,
+        ownerId: job.employerId,
         context: 'job',
         contextTitle: job.title,
         contextCompany: job.company,
@@ -244,6 +289,20 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8FAFB',
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorText: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        marginBottom: 10,
+    },
+    backLink: {
+        color: COLORS.primary,
+        fontWeight: '700',
     },
     header: {
         flexDirection: 'row',

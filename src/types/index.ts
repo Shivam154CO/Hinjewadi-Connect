@@ -16,13 +16,18 @@ export interface UserProfile {
     area: string; // Phase 1, 2, or 3
     photoUrl?: string;
     email?: string;
+    availability?: 'Available' | 'Busy';
 }
 
 export type AuthStackParamList = {
     Login: undefined;
     OTP: { phone: string };
     RoleSelection: undefined;
-    ProfileCreation: { role: UserRole; listingCategory?: ListingCategory };
+    ProfileCreation: {
+        role: UserRole;
+        listingCategory?: ListingCategory;
+        workerType?: 'service' | 'job_seeker';
+    };
 };
 
 export type MainStackParamList = {
@@ -33,6 +38,7 @@ export type MainStackParamList = {
     ServiceProviderDetail: { providerId: string };
     CreateServiceProfile: undefined;
     CreateJobProfile: undefined;
+    ManagePosts: undefined;
 };
 
 export type MainTabParamList = {
@@ -72,6 +78,8 @@ export interface Room {
     status: 'Available' | 'Occupied';
     contactPhone: string;
     createdAt: string;
+    viewsCount?: number;
+    leadsCount?: number;
 }
 
 export type JobCategory = 'Peon' | 'Guard' | 'Office Boy' | 'Watchman' | 'Helper' | 'Security' | 'Driver' | 'Cook';
@@ -92,6 +100,8 @@ export interface Job {
     urgent: boolean;
     requirements: string[];
     benefits: string[];
+    viewsCount?: number;
+    leadsCount?: number;
 }
 
 export interface JobSeekerProfile {
@@ -112,6 +122,7 @@ export type ServiceCategory = 'Maid' | 'Cook' | 'Cleaner' | 'Laundry' | 'Driver'
 
 export interface ServiceProvider {
     id: string;
+    userId?: string;
     name: string;
     phone: string;
     whatsapp?: string;
@@ -129,6 +140,8 @@ export interface ServiceProvider {
     initial: string;
     reviews: ServiceReview[];
     createdAt: string;
+    viewsCount?: number;
+    leadsCount?: number;
 }
 
 export interface ServiceReview {
