@@ -7,10 +7,11 @@ import {
     ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps, UserRole, ListingCategory } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface RoleCardProps {
     title: string;
@@ -23,18 +24,18 @@ interface RoleCardProps {
 
 const RoleCard: React.FC<RoleCardProps> = ({ title, description, icon, role, onSelect, color }) => (
     <TouchableOpacity
-        style={[styles.card, SHADOWS.light]}
+        style={[styles.card, SHADOWS.soft]}
         onPress={() => onSelect(role)}
         activeOpacity={0.7}
     >
-        <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-            <MaterialCommunityIcons name={icon as any} size={32} color={color} />
+        <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
+            <MaterialCommunityIcons name={icon as any} size={30} color={color} />
         </View>
         <View style={styles.cardText}>
             <Text style={styles.cardTitle}>{title}</Text>
             <Text style={styles.cardDescription}>{description}</Text>
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.textSecondary} />
+        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.border} />
     </TouchableOpacity>
 );
 
@@ -51,7 +52,7 @@ const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({
     title, description, icon, category, onSelect, color
 }) => (
     <TouchableOpacity
-        style={[styles.categoryCard, SHADOWS.light]}
+        style={[styles.categoryCard, SHADOWS.soft]}
         onPress={() => onSelect(category)}
         activeOpacity={0.7}
     >
@@ -67,6 +68,7 @@ const ListingCategoryCard: React.FC<ListingCategoryCardProps> = ({
 );
 
 export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = ({ navigation }) => {
+    const { t } = useTranslation();
     const { setRole, setListingCategory } = useAuth();
     const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
     const [workerType, setWorkerType] = useState<'service' | 'job_seeker' | null>(null);
@@ -203,13 +205,13 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>What are you looking for?</Text>
-                    <Text style={styles.subtitle}>Choose your primary role to get started</Text>
+                    <Text style={styles.title}>{t('role_selection_title')}</Text>
+                    <Text style={styles.subtitle}>{t('role_selection_subtitle')}</Text>
                 </View>
 
                 <View style={styles.list}>
                     <RoleCard
-                        title="Looking for Room / PG"
+                        title={t('room_finder')}
                         description="Find the best rooms and PGs in Phase 1, 2, or 3."
                         icon="home-search"
                         role="tenant"
@@ -218,7 +220,7 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
                     />
 
                     <RoleCard
-                        title="Looking for Work"
+                        title={t('worker')}
                         description="Find local jobs as a maid, cook, driver, or helper."
                         icon="briefcase-search"
                         role="worker"
@@ -227,7 +229,7 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
                     />
 
                     <RoleCard
-                        title="Hiring / List Property"
+                        title={t('owner')}
                         description="Post jobs or list your room/PG for others."
                         icon="account-hard-hat"
                         role="employer"
@@ -249,35 +251,40 @@ export const RoleSelectionScreen: React.FC<AuthScreenProps<'RoleSelection'>> = (
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.surface,
+        backgroundColor: COLORS.background,
     },
     scrollContent: {
-        padding: SPACING.lg,
+        padding: SPACING.xl,
         flexGrow: 1,
     },
     header: {
-        marginTop: SPACING.xl,
+        marginTop: SPACING.lg,
         marginBottom: SPACING.xxl,
     },
     title: {
-        fontSize: 26,
-        fontWeight: '800',
+        fontSize: 32,
+        fontFamily: FONTS.title,
         color: COLORS.text,
         marginBottom: SPACING.xs,
+        letterSpacing: -1,
     },
     subtitle: {
         fontSize: 16,
+        fontFamily: FONTS.subHeading,
         color: COLORS.textSecondary,
+        lineHeight: 24,
     },
     backButton: {
-        marginBottom: SPACING.md,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        marginBottom: SPACING.lg,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: COLORS.white,
         alignItems: 'center',
         justifyContent: 'center',
-        ...SHADOWS.light,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        ...SHADOWS.soft,
     },
     list: {
         gap: SPACING.md,
@@ -289,10 +296,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: SPACING.sm,
+        borderWidth: 1.5,
+        borderColor: COLORS.surface,
     },
     iconContainer: {
-        width: 56,
-        height: 56,
+        width: 60,
+        height: 60,
         borderRadius: BORDER_RADIUS.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -303,16 +312,16 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 18,
-        fontWeight: '700',
+        fontFamily: FONTS.heading,
         color: COLORS.text,
         marginBottom: 4,
     },
     cardDescription: {
         fontSize: 14,
+        fontFamily: FONTS.regular,
         color: COLORS.textSecondary,
         lineHeight: 20,
     },
-    // Category selection styles
     categoryCard: {
         backgroundColor: COLORS.white,
         padding: SPACING.lg,
@@ -320,10 +329,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: SPACING.sm,
+        borderWidth: 1.5,
+        borderColor: COLORS.surface,
     },
     categoryIconContainer: {
-        width: 52,
-        height: 52,
+        width: 56,
+        height: 56,
         borderRadius: BORDER_RADIUS.md,
         alignItems: 'center',
         justifyContent: 'center',
@@ -334,14 +345,15 @@ const styles = StyleSheet.create({
     },
     categoryCardTitle: {
         fontSize: 17,
-        fontWeight: '700',
+        fontFamily: FONTS.heading,
         color: COLORS.text,
         marginBottom: 4,
     },
     categoryCardDescription: {
-        fontSize: 13,
+        fontSize: 14,
+        fontFamily: FONTS.regular,
         color: COLORS.textSecondary,
-        lineHeight: 18,
+        lineHeight: 20,
     },
     footer: {
         marginTop: 'auto',
@@ -350,6 +362,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 14,
+        fontFamily: FONTS.regular,
         color: COLORS.textSecondary,
         fontStyle: 'italic',
     },

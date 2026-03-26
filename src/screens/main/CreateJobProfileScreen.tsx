@@ -14,6 +14,8 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainStackScreenProps, JobCategory, JobSeekerProfile } from '../../types';
 import { jobService } from '../../services/jobService';
+import { AppTextInput } from '../../components/AppTextInput';
+import { PrimaryButton } from '../../components/PrimaryButton';
 
 const JOB_CATEGORIES: { key: JobCategory; label: string; icon: string }[] = [
     { key: 'Peon', label: 'Peon', icon: 'account' },
@@ -99,232 +101,149 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
     const availableSkills = selectedCategory ? SKILLS_BY_CATEGORY[selectedCategory] : [];
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.text} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Job Seeker Profile</Text>
-                    <View style={{ width: 40 }} />
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <Text style={styles.title}>Create Job Profile</Text>
+
+                <AppTextInput
+                    label="Full Name"
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Enter your full name"
+                />
+
+                <AppTextInput
+                    label="Phone Number"
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="Enter your phone number"
+                    keyboardType="phone-pad"
+                />
+
+                <Text style={styles.sectionTitle}>Job Category</Text>
+                <View style={styles.categoryGrid}>
+                    {JOB_CATEGORIES.map((category) => (
+                        <TouchableOpacity
+                            key={category.key}
+                            style={[
+                                styles.categoryCard,
+                                selectedCategory === category.key && styles.categoryCardSelected
+                            ]}
+                            onPress={() => setSelectedCategory(category.key)}
+                        >
+                            <MaterialCommunityIcons
+                                name={category.icon as any}
+                                size={24}
+                                color={selectedCategory === category.key ? COLORS.primary : COLORS.textSecondary}
+                            />
+                            <Text style={[
+                                styles.categoryLabel,
+                                selectedCategory === category.key && styles.categoryLabelSelected
+                            ]}>
+                                {category.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
 
-                <View style={styles.content}>
-                    {/* Banner */}
-                    <View style={styles.banner}>
-                        <View style={styles.bannerIcon}>
-                            <MaterialCommunityIcons name="briefcase-plus" size={28} color={COLORS.primary} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.bannerTitle}>Create Your Job Profile</Text>
-                            <Text style={styles.bannerSubtext}>Let employers in Hinjewadi find and hire you</Text>
-                        </View>
-                    </View>
-
-                    {/* Name */}
-                    <Text style={styles.label}>Full Name *</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your full name"
-                        placeholderTextColor={COLORS.textSecondary}
-                        value={name}
-                        onChangeText={setName}
-                    />
-
-                    {/* Phone */}
-                    <Text style={styles.label}>Phone Number *</Text>
-                    <View style={styles.phoneInputRow}>
-                        <View style={styles.phonePrefix}>
-                            <Text style={styles.phonePrefixText}>+91</Text>
-                        </View>
-                        <TextInput
-                            style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
-                            placeholder="Enter your phone number"
-                            placeholderTextColor={COLORS.textSecondary}
-                            value={phone}
-                            onChangeText={setPhone}
-                            keyboardType="phone-pad"
-                            maxLength={10}
-                        />
-                    </View>
-
-                    {/* Category */}
-                    <Text style={styles.label}>Job Category *</Text>
-                    <Text style={styles.helperText}>What type of job are you looking for?</Text>
-                    <View style={styles.categoryGrid}>
-                        {JOB_CATEGORIES.map(cat => (
-                            <TouchableOpacity
-                                key={cat.key}
-                                style={[
-                                    styles.categoryCard,
-                                    selectedCategory === cat.key && styles.categoryCardActive
-                                ]}
-                                onPress={() => {
-                                    setSelectedCategory(cat.key);
-                                    setSelectedSkills([]);
-                                }}
-                            >
-                                <MaterialCommunityIcons
-                                    name={cat.icon as any}
-                                    size={22}
-                                    color={selectedCategory === cat.key ? COLORS.white : COLORS.primary}
-                                />
-                                <Text style={[
-                                    styles.categoryCardText,
-                                    selectedCategory === cat.key && styles.categoryCardTextActive
-                                ]}>{cat.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Skills */}
-                    {availableSkills.length > 0 && (
-                        <>
-                            <Text style={styles.label}>Your Skills</Text>
-                            <Text style={styles.helperText}>Select all that apply</Text>
-                            <View style={styles.chipsRow}>
-                                {availableSkills.map(skill => (
-                                    <TouchableOpacity
-                                        key={skill}
-                                        style={[
-                                            styles.skillChip,
-                                            selectedSkills.includes(skill) && styles.skillChipActive
-                                        ]}
-                                        onPress={() => toggleSkill(skill)}
-                                    >
-                                        <MaterialCommunityIcons
-                                            name={selectedSkills.includes(skill) ? 'check-circle' : 'circle-outline'}
-                                            size={16}
-                                            color={selectedSkills.includes(skill) ? COLORS.primary : COLORS.textSecondary}
-                                        />
-                                        <Text style={[
-                                            styles.skillChipText,
-                                            selectedSkills.includes(skill) && styles.skillChipTextActive
-                                        ]}>{skill}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </>
-                    )}
-
-                    {/* Experience */}
-                    <Text style={styles.label}>Experience</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g., 3 years as security guard"
-                        placeholderTextColor={COLORS.textSecondary}
-                        value={experience}
-                        onChangeText={setExperience}
-                    />
-
-                    {/* Expected Salary */}
-                    <Text style={styles.label}>Expected Salary</Text>
-                    <View style={styles.salaryInputRow}>
-                        <View style={styles.salaryPrefix}>
-                            <Text style={styles.salaryPrefixText}>₹</Text>
-                        </View>
-                        <TextInput
-                            style={[styles.input, { flex: 1, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }]}
-                            placeholder="e.g., 15000"
-                            placeholderTextColor={COLORS.textSecondary}
-                            value={expectedSalary}
-                            onChangeText={setExpectedSalary}
-                            keyboardType="numeric"
-                        />
-                        <View style={styles.salarySuffix}>
-                            <Text style={styles.salarySuffixText}>/month</Text>
-                        </View>
-                    </View>
-
-                    {/* Preferred Area */}
-                    <Text style={styles.label}>Preferred Area *</Text>
-                    <View style={styles.chipsRow}>
-                        {AREAS.map(area => (
-                            <TouchableOpacity
-                                key={area}
-                                style={[
-                                    styles.areaChip,
-                                    selectedArea === area && styles.areaChipActive
-                                ]}
-                                onPress={() => setSelectedArea(area)}
-                            >
-                                <MaterialCommunityIcons
-                                    name="map-marker"
-                                    size={16}
-                                    color={selectedArea === area ? COLORS.white : COLORS.textSecondary}
-                                />
-                                <Text style={[
-                                    styles.areaChipText,
-                                    selectedArea === area && styles.areaChipTextActive
-                                ]}>{area}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Availability */}
-                    <Text style={styles.label}>Availability</Text>
-                    <View style={styles.chipsRow}>
-                        {AVAILABILITY_OPTIONS.map(option => (
-                            <TouchableOpacity
-                                key={option}
-                                style={[
-                                    styles.availChip,
-                                    availability === option && styles.availChipActive
-                                ]}
-                                onPress={() => setAvailability(option)}
-                            >
-                                <MaterialCommunityIcons
-                                    name={availability === option ? 'radiobox-marked' : 'radiobox-blank'}
-                                    size={16}
-                                    color={availability === option ? COLORS.white : COLORS.textSecondary}
-                                />
-                                <Text style={[
-                                    styles.availChipText,
-                                    availability === option && styles.availChipTextActive
-                                ]}>{option}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Description */}
-                    <Text style={styles.label}>About Yourself</Text>
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        placeholder="Tell employers about yourself — your strengths, why they should hire you..."
-                        placeholderTextColor={COLORS.textSecondary}
-                        value={description}
-                        onChangeText={setDescription}
-                        multiline
-                        numberOfLines={4}
-                    />
-
-                    {/* Submit */}
-                    <TouchableOpacity
-                        style={[styles.submitButton, loading && { opacity: 0.7 }]}
-                        onPress={handleSubmit}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color={COLORS.white} />
-                        ) : (
-                            <>
-                                <MaterialCommunityIcons name="check-circle" size={22} color={COLORS.white} />
-                                <Text style={styles.submitButtonText}>Create Job Profile</Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-
-                    {/* Tip */}
-                    <View style={styles.tipCard}>
-                        <MaterialCommunityIcons name="lightbulb-outline" size={20} color="#FF9800" />
-                        <Text style={styles.tipText}>
-                            Tip: Profiles with complete information get 3x more calls from employers!
-                        </Text>
-                    </View>
-
-                    <View style={{ height: SPACING.xl }} />
+                <Text style={styles.sectionTitle}>Area</Text>
+                <View style={styles.areaGrid}>
+                    {AREAS.map((area) => (
+                        <TouchableOpacity
+                            key={area}
+                            style={[
+                                styles.areaChip,
+                                selectedArea === area && styles.areaChipSelected
+                            ]}
+                            onPress={() => setSelectedArea(area)}
+                        >
+                            <Text style={[
+                                styles.areaText,
+                                selectedArea === area && styles.areaTextSelected
+                            ]}>
+                                {area}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
+
+                <AppTextInput
+                    label="Experience (years)"
+                    value={experience}
+                    onChangeText={setExperience}
+                    placeholder="e.g., 2 years"
+                    keyboardType="numeric"
+                />
+
+                <AppTextInput
+                    label="Expected Salary (₹ per month)"
+                    value={expectedSalary}
+                    onChangeText={setExpectedSalary}
+                    placeholder="e.g., 15000"
+                    keyboardType="numeric"
+                />
+
+                {availableSkills.length > 0 && (
+                    <>
+                        <Text style={styles.sectionTitle}>Skills</Text>
+                        <View style={styles.skillsGrid}>
+                            {availableSkills.map((skill) => (
+                                <TouchableOpacity
+                                    key={skill}
+                                    style={[
+                                        styles.skillChip,
+                                        selectedSkills.includes(skill) && styles.skillChipSelected
+                                    ]}
+                                    onPress={() => toggleSkill(skill)}
+                                >
+                                    <Text style={[
+                                        styles.skillText,
+                                        selectedSkills.includes(skill) && styles.skillTextSelected
+                                    ]}>
+                                        {skill}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </>
+                )}
+
+                <Text style={styles.sectionTitle}>Availability</Text>
+                <View style={styles.availabilityGrid}>
+                    {AVAILABILITY_OPTIONS.map((option) => (
+                        <TouchableOpacity
+                            key={option}
+                            style={[
+                                styles.availabilityChip,
+                                availability === option && styles.availabilityChipSelected
+                            ]}
+                            onPress={() => setAvailability(option)}
+                        >
+                            <Text style={[
+                                styles.availabilityText,
+                                availability === option && styles.availabilityTextSelected
+                            ]}>
+                                {option}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <AppTextInput
+                    label="Description (Optional)"
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="Tell employers about yourself..."
+                    multiline
+                    numberOfLines={3}
+                />
+
+                <PrimaryButton
+                    title={loading ? "Creating Profile..." : "Create Profile"}
+                    onPress={handleSubmit}
+                    disabled={loading}
+                    style={styles.submitButton}
+                />
             </ScrollView>
         </SafeAreaView>
     );
@@ -333,270 +252,138 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFB',
+        backgroundColor: COLORS.background,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
+    scrollContent: {
+        padding: SPACING.lg,
+        paddingBottom: SPACING.xl * 2,
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.white,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...SHADOWS.light,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '800',
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
         color: COLORS.text,
-    },
-    content: {
-        paddingHorizontal: SPACING.lg,
-    },
-    banner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E3F0FF',
-        borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md,
+        textAlign: 'center',
         marginBottom: SPACING.xl,
-        gap: SPACING.md,
     },
-    bannerIcon: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        backgroundColor: COLORS.white,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    bannerTitle: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: COLORS.primary,
-    },
-    bannerSubtext: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginTop: 2,
-    },
-    label: {
-        fontSize: 14,
+    sectionTitle: {
+        fontSize: 18,
         fontWeight: '600',
         color: COLORS.text,
-        marginBottom: SPACING.xs,
-        marginTop: SPACING.md,
-    },
-    helperText: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginBottom: SPACING.sm,
-    },
-    input: {
-        backgroundColor: COLORS.white,
-        borderRadius: BORDER_RADIUS.md,
-        padding: SPACING.md,
-        fontSize: 14,
-        color: COLORS.text,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    textArea: {
-        minHeight: 100,
-        textAlignVertical: 'top',
-    },
-    phoneInputRow: {
-        flexDirection: 'row',
-    },
-    phonePrefix: {
-        backgroundColor: '#EEF2F6',
-        paddingHorizontal: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderTopLeftRadius: BORDER_RADIUS.md,
-        borderBottomLeftRadius: BORDER_RADIUS.md,
-        borderWidth: 1,
-        borderRightWidth: 0,
-        borderColor: COLORS.border,
-    },
-    phonePrefixText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.text,
-    },
-    salaryInputRow: {
-        flexDirection: 'row',
-    },
-    salaryPrefix: {
-        backgroundColor: '#E8F5E9',
-        paddingHorizontal: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderTopLeftRadius: BORDER_RADIUS.md,
-        borderBottomLeftRadius: BORDER_RADIUS.md,
-        borderWidth: 1,
-        borderRightWidth: 0,
-        borderColor: COLORS.border,
-    },
-    salaryPrefixText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: COLORS.success,
-    },
-    salarySuffix: {
-        backgroundColor: '#EEF2F6',
-        paddingHorizontal: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderTopRightRadius: BORDER_RADIUS.md,
-        borderBottomRightRadius: BORDER_RADIUS.md,
-        borderWidth: 1,
-        borderLeftWidth: 0,
-        borderColor: COLORS.border,
-    },
-    salarySuffixText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.textSecondary,
+        marginTop: SPACING.lg,
+        marginBottom: SPACING.md,
     },
     categoryGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: SPACING.sm,
+        marginBottom: SPACING.md,
     },
     categoryCard: {
-        width: '23%',
-        backgroundColor: COLORS.white,
+        flex: 1,
+        minWidth: '45%',
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.md,
-        paddingVertical: SPACING.md,
-        paddingHorizontal: 4,
+        padding: SPACING.md,
         alignItems: 'center',
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: COLORS.border,
-        gap: 4,
+        ...SHADOWS.light,
     },
-    categoryCardActive: {
-        backgroundColor: COLORS.primary,
+    categoryCardSelected: {
         borderColor: COLORS.primary,
+        backgroundColor: COLORS.secondary,
     },
-    categoryCardText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: COLORS.text,
+    categoryLabel: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        marginTop: SPACING.xs,
         textAlign: 'center',
     },
-    categoryCardTextActive: {
-        color: COLORS.white,
+    categoryLabelSelected: {
+        color: COLORS.primary,
+        fontWeight: '600',
     },
-    chipsRow: {
+    areaGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: SPACING.sm,
-    },
-    skillChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.white,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: BORDER_RADIUS.full,
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-        gap: 6,
-    },
-    skillChipActive: {
-        backgroundColor: '#E3F0FF',
-        borderColor: COLORS.primary,
-    },
-    skillChipText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: COLORS.textSecondary,
-    },
-    skillChipTextActive: {
-        color: COLORS.primary,
+        marginBottom: SPACING.md,
     },
     areaChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.white,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: BORDER_RADIUS.full,
-        borderWidth: 1.5,
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.lg,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderWidth: 1,
         borderColor: COLORS.border,
-        gap: 6,
     },
-    areaChipActive: {
-        backgroundColor: COLORS.primary,
+    areaChipSelected: {
         borderColor: COLORS.primary,
+        backgroundColor: COLORS.secondary,
     },
-    areaChipText: {
-        fontSize: 13,
-        fontWeight: '600',
+    areaText: {
+        fontSize: 14,
         color: COLORS.textSecondary,
     },
-    areaChipTextActive: {
-        color: COLORS.white,
+    areaTextSelected: {
+        color: COLORS.primary,
+        fontWeight: '600',
     },
-    availChip: {
+    skillsGrid: {
         flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.white,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: BORDER_RADIUS.full,
-        borderWidth: 1.5,
+        flexWrap: 'wrap',
+        gap: SPACING.sm,
+        marginBottom: SPACING.md,
+    },
+    skillChip: {
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.lg,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderWidth: 1,
         borderColor: COLORS.border,
-        gap: 6,
     },
-    availChipActive: {
-        backgroundColor: COLORS.success,
-        borderColor: COLORS.success,
+    skillChipSelected: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.secondary,
     },
-    availChipText: {
+    skillText: {
         fontSize: 12,
-        fontWeight: '600',
         color: COLORS.textSecondary,
     },
-    availChipTextActive: {
-        color: COLORS.white,
+    skillTextSelected: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    availabilityGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: SPACING.sm,
+        marginBottom: SPACING.md,
+    },
+    availabilityChip: {
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.lg,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    availabilityChipSelected: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.secondary,
+    },
+    availabilityText: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+    },
+    availabilityTextSelected: {
+        color: COLORS.primary,
+        fontWeight: '600',
     },
     submitButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: COLORS.primary,
-        paddingVertical: 16,
-        borderRadius: BORDER_RADIUS.full,
         marginTop: SPACING.xl,
-        gap: 8,
-        ...SHADOWS.medium,
-    },
-    submitButtonText: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    tipCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFF8E1',
-        borderRadius: BORDER_RADIUS.md,
-        padding: SPACING.md,
-        marginTop: SPACING.md,
-        gap: SPACING.sm,
-    },
-    tipText: {
-        flex: 1,
-        fontSize: 12,
-        color: '#E65100',
-        lineHeight: 18,
     },
 });
+
+export default CreateJobProfileScreen;

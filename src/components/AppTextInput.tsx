@@ -7,7 +7,7 @@ import {
     TextInputProps,
     ViewStyle
 } from 'react-native';
-import { COLORS, BORDER_RADIUS, SPACING } from '../theme/theme';
+import { COLORS, BORDER_RADIUS, SPACING, FONTS } from '../theme/theme';
 
 interface AppTextInputProps extends TextInputProps {
     label?: string;
@@ -31,6 +31,7 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
                 <TextInput
                     style={styles.input}
                     placeholderTextColor={COLORS.textSecondary}
+                    selectionColor={COLORS.primary}
                     {...props}
                 />
             </View>
@@ -41,26 +42,27 @@ export const AppTextInput: React.FC<AppTextInputProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: SPACING.md,
+        marginBottom: SPACING.lg,
         width: '100%',
     },
     label: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 15,
+        fontFamily: FONTS.heading,
         color: COLORS.text,
-        marginBottom: SPACING.xs,
+        marginBottom: SPACING.sm,
     },
     inputContainer: {
-        backgroundColor: COLORS.surface,
-        borderRadius: BORDER_RADIUS.md,
-        borderWidth: 1,
+        backgroundColor: COLORS.input,
+        borderRadius: BORDER_RADIUS.lg,
+        borderWidth: 1.5,
         borderColor: COLORS.border,
         paddingHorizontal: SPACING.md,
-        height: 56,
+        height: 64,
         justifyContent: 'center',
     },
     input: {
-        fontSize: 16,
+        fontSize: 18,
+        fontFamily: FONTS.regular,
         color: COLORS.text,
     },
     inputError: {
@@ -68,7 +70,8 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: COLORS.error,
-        fontSize: 12,
-        marginTop: 4,
+        fontSize: 13,
+        fontFamily: FONTS.regular,
+        marginTop: 6,
     },
 });

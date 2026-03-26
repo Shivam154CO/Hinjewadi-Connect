@@ -2,14 +2,15 @@ import { supabase } from '../supabase/supabaseClient';
 import { ServiceProvider, ServiceReview } from '../types';
 
 export const providerService = {
-    async getProviders(): Promise<ServiceProvider[]> {
+    async getProviders(limit: number = 20, offset: number = 0): Promise<ServiceProvider[]> {
         const { data, error } = await supabase
             .from('service_providers')
             .select(`
                 *,
                 service_reviews (*)
             `)
-            .order('rating', { ascending: false });
+            .order('rating', { ascending: false })
+            .range(offset, offset + limit - 1);
 
         if (error) {
             console.error('Error fetching providers:', error);

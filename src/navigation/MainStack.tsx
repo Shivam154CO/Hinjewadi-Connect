@@ -5,9 +5,9 @@ import { MainNavigator } from './MainNavigator';
 import { RoomDetailScreen } from '../screens/main/RoomDetailScreen';
 import { PostListingScreen } from '../screens/main/PostListingScreen';
 import { ServiceProviderDetailScreen } from '../screens/main/ServiceProviderDetailScreen';
-import { CreateServiceProfileScreen } from '../screens/main/CreateServiceProfileScreen';
+import CreateServiceProfileScreen from '../screens/main/CreateServiceProfileScreen';
 import { JobDetailScreen } from '../screens/main/JobDetailScreen';
-import { CreateJobProfileScreen } from '../screens/main/CreateJobProfileScreen';
+import CreateJobProfileScreen from '../screens/main/CreateJobProfileScreen';
 import { ManagePostsScreen } from '../screens/main/ManagePostsScreen';
 import { COLORS } from '../theme/theme';
 

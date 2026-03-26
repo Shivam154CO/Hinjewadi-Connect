@@ -2,11 +2,12 @@ import { supabase } from '../supabase/supabaseClient';
 import { Job, JobSeekerProfile } from '../types';
 
 export const jobService = {
-    async getJobs(): Promise<Job[]> {
+    async getJobs(limit: number = 20, offset: number = 0): Promise<Job[]> {
         const { data, error } = await supabase
             .from('jobs')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
 
         if (error) {
             console.error('Error fetching jobs:', error);

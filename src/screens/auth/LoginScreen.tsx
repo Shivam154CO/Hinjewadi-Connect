@@ -1,215 +1,142 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    TouchableOpacity,
-    Alert
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS } from '../../theme/theme';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps } from '../../types';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
+import { validation } from '../../utils/validation';
+import { errorHandler } from '../../utils/errorHandler';
+import { useTranslation } from 'react-i18next';
+import { TouchableOpacity } from 'react-native';
 
-export const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [email, setEmail] = useState('');
-    const [useEmail, setUseEmail] = useState(false);
+const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
+    const { t, i18n } = useTranslation();
+    const [phone, setPhone] = useState('');
+    const { login, isLoading } = useAuth();
 
-    // Destructure everything at the top level of the component
-    const { login, loginWithEmail, isLoading, bypassAuth } = useAuth();
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+    };
 
     const handleLogin = async () => {
+        const phoneValidation = validation.phone(phone.trim());
+        if (!phoneValidation.isValid) {
+            errorHandler.handleValidationError('Phone', phoneValidation.error || 'Invalid phone number');
+            return;
+        }
         try {
-            if (useEmail) {
-                if (!email.includes('@')) {
-                    Alert.alert('Error', 'Please enter a valid email');
-                    return;
-                }
-                await loginWithEmail(email);
-                // After email login, if user is new, fetchUserProfile will return null 
-                // and navigators will handle it or we navigate to RoleSelection
-                // But for now, let's assume if it works, they are in
+            const isRegistered = await login(phone.trim());
+            if (isRegistered) {
+                // If user exists, AuthContext handles state and AppNavigator will switch to MainStack
+            } else {
                 navigation.navigate('RoleSelection');
-            } else {
-                if (phoneNumber.length === 10) {
-                    await login(phoneNumber);
-                    navigation.navigate('OTP', { phone: phoneNumber });
-                } else {
-                    Alert.alert('Error', 'Please enter a 10-digit phone number');
-                }
             }
-        } catch (error: any) {
-            console.error('Login error:', error);
-            if (error.message?.includes('provider') || error.message?.includes('Sms')) {
-                // For provider issues, we let them proceed to the OTP screen to use the dev bypass
-                navigation.navigate('OTP', { phone: phoneNumber });
-            } else {
-                Alert.alert('Error', error.message || 'Login failed');
-            }
+        } catch (err: any) {
+            errorHandler.handleAuthError(err);
         }
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-            >
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.header}>
-                        <View style={styles.logoPlaceholder}>
-                            <Text style={styles.logoText}>HC</Text>
-                        </View>
-                        <Text style={styles.title}>Hinjewadi Connect</Text>
-                        <Text style={styles.subtitle}>Hyperlocal networking for Pune's IT hub</Text>
-                    </View>
-
-                    <View style={styles.form}>
-                        <Text style={styles.sectionTitle}>
-                            {useEmail ? 'Login with Email' : 'Login with Phone Number'}
-                        </Text>
-
-                        {!useEmail ? (
-                            <AppTextInput
-                                label="Phone Number"
-                                placeholder="Enter 10 digit number"
-                                keyboardType="phone-pad"
-                                value={phoneNumber}
-                                onChangeText={setPhoneNumber}
-                                maxLength={10}
-                            />
-                        ) : (
-                            <AppTextInput
-                                label="Email Address"
-                                placeholder="example@email.com"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                value={email}
-                                onChangeText={setEmail}
-                            />
-                        )}
-
-                        <PrimaryButton
-                            title={useEmail ? "Continue" : "Send OTP"}
-                            onPress={handleLogin}
-                            loading={isLoading}
-                            style={styles.button}
-                        />
-
-                        <TouchableOpacity
-                            onPress={() => setUseEmail(!useEmail)}
-                            style={styles.toggleContainer}
-                        >
-                            <Text style={styles.toggleText}>
-                                {useEmail ? 'Use Phone Number instead' : 'Use Email instead'}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                console.log('Bypass trigger');
-                                bypassAuth();
-                            }}
-                            style={styles.skipContainer}
-                        >
-                            <Text style={styles.skipText}>Skip for now (Dev Only)</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.footer}>
-                        <Text style={styles.footerText}>
-                            By continuing, you agree to our Terms and Privacy Policy
-                        </Text>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+            <View style={styles.langSelector}>
+                {['en', 'hi', 'mr'].map((lang) => (
+                    <TouchableOpacity
+                        key={lang}
+                        onPress={() => changeLanguage(lang)}
+                        style={[
+                            styles.langBtn,
+                            i18n.language === lang && styles.langBtnActive
+                        ]}
+                    >
+                        <Text style={[
+                            styles.langText,
+                            i18n.language === lang && styles.langTextActive
+                        ]}>{lang.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <View style={styles.inner}>
+                <Text style={styles.title}>{t('welcome')}</Text>
+                <Text style={styles.subtitle}>{t('login_subtitle')}</Text>
+                <AppTextInput
+                    label="Phone"
+                    placeholder={t('phone_placeholder')}
+                    keyboardType="phone-pad"
+                    value={phone}
+                    onChangeText={setPhone}
+                />
+                <PrimaryButton
+                    title={t('continue')}
+                    onPress={handleLogin}
+                    loading={isLoading}
+                    style={styles.button}
+                />
+            </View>
         </SafeAreaView>
     );
 };
 
+export default LoginScreen;
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
+    container: { 
+        flex: 1, 
+        backgroundColor: COLORS.background 
     },
-    scrollContent: {
-        flexGrow: 1,
-        padding: SPACING.xl,
-        justifyContent: 'center',
+    langSelector: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: SPACING.md,
+        gap: SPACING.sm,
     },
-    header: {
-        alignItems: 'center',
-        marginBottom: SPACING.xxl,
+    langBtn: {
+        paddingHorizontal: SPACING.md,
+        paddingVertical: 6,
+        borderRadius: BORDER_RADIUS.full,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        backgroundColor: COLORS.white,
     },
-    logoPlaceholder: {
-        width: 80,
-        height: 80,
-        borderRadius: BORDER_RADIUS.xl,
+    langBtnActive: {
         backgroundColor: COLORS.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: SPACING.md,
+        borderColor: COLORS.primary,
+        ...SHADOWS.soft,
     },
-    logoText: {
+    langText: {
+        fontSize: 12,
+        fontFamily: FONTS.bold,
+        color: COLORS.textSecondary,
+    },
+    langTextActive: {
         color: COLORS.white,
-        fontSize: 32,
-        fontWeight: '800',
+    },
+    inner: { 
+        padding: SPACING.xl, 
+        flex: 1, 
+        justifyContent: 'center' 
     },
     title: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 36,
+        fontFamily: FONTS.title,
         color: COLORS.text,
         marginBottom: SPACING.xs,
+        letterSpacing: -1,
     },
     subtitle: {
-        fontSize: 16,
-        color: COLORS.textSecondary,
-        textAlign: 'center',
-    },
-    form: {
-        width: '100%',
-    },
-    sectionTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        color: COLORS.text,
-        marginBottom: SPACING.lg,
-    },
-    button: {
-        marginTop: SPACING.md,
-    },
-    toggleContainer: {
-        marginTop: SPACING.lg,
-        alignItems: 'center',
-    },
-    toggleText: {
-        color: COLORS.primary,
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    skipContainer: {
-        marginTop: SPACING.md,
-        alignItems: 'center',
-    },
-    skipText: {
+        fontFamily: FONTS.subHeading,
         color: COLORS.textSecondary,
-        fontSize: 14,
-        textDecorationLine: 'underline',
+        marginBottom: SPACING.xxxl,
+        lineHeight: 28,
     },
-    footer: {
-        marginTop: 'auto',
-        paddingTop: SPACING.xxl,
-    },
-    footerText: {
-        textAlign: 'center',
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        lineHeight: 18,
+    button: { 
+        marginTop: SPACING.xl,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+        elevation: 10,
     },
 });

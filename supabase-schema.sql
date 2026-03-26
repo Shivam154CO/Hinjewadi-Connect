@@ -186,17 +186,15 @@ CREATE POLICY "Anyone can insert service reviews" ON public.service_reviews
     FOR INSERT WITH CHECK (true);
 
 
--- 7. REPORTS TABLE (Trust & Safety)
-CREATE TABLE IF NOT EXISTS public.reports (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    reporter_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    target_id TEXT NOT NULL,
-    target_type TEXT NOT NULL CHECK (target_type IN ('room', 'job', 'service', 'user')),
-    reason TEXT NOT NULL CHECK (reason IN ('fake_listing', 'spam', 'harassment', 'inappropriate_content', 'scam_fraud', 'wrong_info', 'duplicate', 'other')),
-    description TEXT,
-    status TEXT CHECK (status IN ('pending', 'reviewed', 'resolved', 'dismissed')) DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Add indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_rooms_area_status ON public.rooms(area, status);
+CREATE INDEX IF NOT EXISTS idx_rooms_created_at ON public.rooms(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_area ON public.jobs(area);
+CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON public.jobs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_service_providers_category ON public.service_providers(category);
+CREATE INDEX IF NOT EXISTS idx_service_providers_rating ON public.service_providers(rating DESC);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users(phone);
+CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
 
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 

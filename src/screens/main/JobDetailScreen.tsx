@@ -18,38 +18,6 @@ import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser, addToBlockedList } from '../../utils/trustSafetyUtils';
 import { jobService } from '../../services/jobService';
 
-// Mock — in production fetched by route.params.jobId
-const MOCK_JOB: Job = {
-    id: '1',
-    employerId: 'e1',
-    title: 'Security Guard',
-    company: 'Tech Park Security Services',
-    category: 'Guard',
-    description: 'We are looking for a dedicated and reliable security guard for the day shift at our Hinjewadi Phase 1 tech park campus. The candidate should be physically fit, alert, and capable of handling visitor management and access control.\n\nPrevious experience in corporate/tech park security is preferred but not mandatory. We provide on-the-job training.',
-    area: 'Phase 1',
-    type: 'Full Time',
-    experience: '2-5 years',
-    salary: '₹15,000 - ₹20,000/mo',
-    contactPhone: '9876543001',
-    postedAgo: '2 days ago',
-    urgent: false,
-    requirements: [
-        'Physical fitness',
-        'Age between 25-45',
-        'Marathi and Hindi speaking',
-        'No criminal record',
-        'Basic reading/writing',
-    ],
-    benefits: [
-        'Provident Fund (PF)',
-        'ESI Health Insurance',
-        'Uniform provided free',
-        'Weekly off (rotational)',
-        'Festival bonus',
-        'Overtime pay',
-    ],
-};
-
 export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ route, navigation }) => {
     const { jobId } = route.params;
     const [job, setJob] = useState<Job | null>(null);

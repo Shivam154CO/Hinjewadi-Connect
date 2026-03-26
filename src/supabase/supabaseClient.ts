@@ -1,6 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 
-const supabaseUrl = 'https://kazpzlhqchzexhpojrgi.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthenB6bGhxY2h6ZXhocG9qcmdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2OTczOTcsImV4cCI6MjA4NzI3MzM5N30.OkB0Jk8dPwV63o6rHG5CYPZ5w3MRu7IvPj9MunXlF-g';
+// Use environment variables from expo config, or fallbacks for development if needed.
+// Note: In production, these should ALWAYS come from process.env or Constants.expoConfig.extra
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase credentials missing! Check your environment variables.');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -7,15 +7,12 @@ interface AuthContextType {
     role: UserRole;
     listingCategory: ListingCategory;
     isLoading: boolean;
-    login: (phone: string) => Promise<void>;
-    loginWithEmail: (email: string, password?: string) => Promise<void>;
-    verifyOtp: (otp: string) => Promise<void>;
+    login: (phone: string) => Promise<boolean>;
     completeProfile: (profile: Partial<UserProfile>) => Promise<void>;
     updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
     setRole: (role: UserRole) => Promise<void>;
     setListingCategory: (category: ListingCategory) => Promise<void>;
     logout: () => void;
-    bypassAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,64 +63,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const login = async (phone: string) => {
+    const login = async (phone: string): Promise<boolean> => {
         setIsLoading(true);
         setPhone(phone);
         try {
-            // Test numbers that always work without sending SMS
-            const testNumbers = ['9999999999', '8888888888', '7777777777'];
-            if (testNumbers.includes(phone)) {
-                console.log('Using test number, skipping SMS send');
-                return;
-            }
+            // Check if user exists in the database
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('phone', phone)
+                .single();
 
-            const { error } = await supabase.auth.signInWithOtp({
-                phone: `+91${phone}`,
-            });
-
-            if (error) {
-                // If it's a provider issue, we log it and allow navigation to OTP screen for mock testing
-                if (error.message.includes('Unsupported phone provider') || error.message.includes('Sms service could not be initialized')) {
-                    console.warn('Phone Provider issue. Proceeding with mock mode.');
-                    return;
-                }
-                throw error;
+            if (data) {
+                // User exists, fetch profile and set state
+                setUser(data);
+                setRoleState(data.role);
+                setListingCategoryState(data.listing_category);
+                return true; // Already registered
+            } else {
+                // User doesn't exist
+                setUser(null);
+                return false; // New registration
             }
         } catch (error: any) {
-            console.error('Error sending OTP:', error);
-            // Allow proceeding to OTP screen even on provider errors for development
-            if (error.message?.includes('provider') || error.message?.includes('Sms')) return;
-            throw error;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const loginWithEmail = async (email: string, password?: string) => {
-        setIsLoading(true);
-        try {
-            // For now, if no password, we treat as "Guest/Magic" login for Hinjewadi Connect simplicity
-            // or we use a default password if we want to bypass real email auth
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password: password || 'Test123456',
-            });
-
-            if (error) {
-                // If user doesn't exist, try to sign up
-                const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                    email,
-                    password: password || 'Test123456',
-                });
-
-                if (signUpError) throw signUpError;
-                if (signUpData.user) await fetchUserProfile(signUpData.user.id);
-            } else {
-                if (data.user) await fetchUserProfile(data.user.id);
-            }
-        } catch (error) {
-            console.error('Email Login Error:', error);
-            throw error;
+            console.error('Simple Login Error:', error);
+            setUser(null);
+            return false;
         } finally {
             setIsLoading(false);
         }
@@ -132,27 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const verifyOtp = async (otp: string) => {
         setIsLoading(true);
         try {
-            // MASTER BYPASS for development
-            if (otp === '123456' || phone === '9999999999') {
-                console.warn('Bypassing OTP verification for development...');
-
-                // Check if user already exists in our table
-                const { data: existingUser } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('phone', phone)
-                    .single();
-
-                if (existingUser) {
-                    setUser(existingUser);
-                    setRoleState(existingUser.role);
-                } else {
-                    // Start new mock session
-                    setUser(null);
-                }
-                return;
-            }
-
             const { data, error } = await supabase.auth.verifyOtp({
                 phone: `+91${phone}`,
                 token: otp,
@@ -254,7 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const { error: userError } = await supabase
                 .from('users')
                 .upsert({
-                    id: authUser.id,
+                    id: user?.id || (Math.random().toString(36).substring(7)), // Fallback ID if no auth
                     name: profile.name,
                     phone: profile.phone || phone,
                     role: profile.role || role,
@@ -315,20 +259,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setListingCategoryState(null);
     };
 
-    const bypassAuth = () => {
-        const mockUser: UserProfile = {
-            id: 'bypass-user',
-            name: 'Guest User',
-            phone: '9999999999',
-            role: 'tenant',
-            listingCategory: null,
-            area: 'Phase 1'
-        };
-        setRoleState('tenant');
-        setListingCategoryState(null);
-        setUser(mockUser);
-    };
-
     return (
         <AuthContext.Provider value={{
             user,
@@ -336,14 +266,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             listingCategory,
             isLoading,
             login,
-            loginWithEmail,
-            verifyOtp,
             completeProfile,
             updateProfile,
             setRole,
             setListingCategory,
-            logout,
-            bypassAuth
+            logout
         }}>
             {children}
         </AuthContext.Provider>

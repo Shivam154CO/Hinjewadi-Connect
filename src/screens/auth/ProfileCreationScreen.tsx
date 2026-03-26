@@ -9,12 +9,13 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps, ListingCategory, ServiceCategory, JobCategory } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
@@ -50,6 +51,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = ['Maid', 'Cook', 'Cleaner', 'Laund
 const JOB_CATEGORIES: JobCategory[] = ['Peon', 'Guard', 'Office Boy', 'Watchman', 'Helper', 'Security', 'Driver', 'Cook'];
 
 export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>> = ({ route, navigation }) => {
+    const { t } = useTranslation();
     const { role, listingCategory, workerType } = route.params;
     const [name, setName] = useState('');
     const [selectedArea, setSelectedArea] = useState('Phase 1');
@@ -99,7 +101,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Complete your profile</Text>
+                        <Text style={styles.title}>{t('profile_creation_title')}</Text>
                         <Text style={styles.subtitle}>Help others discover you in Hinjewadi</Text>
                     </View>
 
@@ -131,7 +133,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
 
                     <View style={styles.form}>
                         <AppTextInput
-                            label="Full Name"
+                            label={t('name')}
                             placeholder="Enter your name"
                             value={name}
                             onChangeText={setName}
@@ -229,7 +231,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                         </View>
 
                         <PrimaryButton
-                            title="Finish Setup"
+                            title={t('save')}
                             onPress={handleComplete}
                             loading={isLoading}
                             style={styles.completeButton}
@@ -247,38 +249,41 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     scrollContent: {
-        padding: SPACING.lg,
+        padding: SPACING.xl,
         flexGrow: 1,
     },
     header: {
-        marginTop: SPACING.md,
-        marginBottom: SPACING.xl,
+        marginTop: SPACING.lg,
+        marginBottom: SPACING.xxl,
     },
     title: {
-        fontSize: 26,
-        fontWeight: '800',
+        fontSize: 32,
+        fontWeight: '900',
         color: COLORS.text,
         marginBottom: SPACING.xs,
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,
         color: COLORS.textSecondary,
+        lineHeight: 24,
     },
     categoryBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.secondary + '15',
+        backgroundColor: COLORS.surface,
         padding: SPACING.md,
-        borderRadius: BORDER_RADIUS.md,
-        marginBottom: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        marginBottom: SPACING.xl,
         borderWidth: 1,
-        borderColor: COLORS.secondary + '30',
+        borderColor: COLORS.border,
+        ...SHADOWS.soft,
     },
     categoryBannerIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: COLORS.secondary + '20',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: COLORS.primary + '10',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: SPACING.md,
@@ -290,22 +295,23 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: COLORS.textSecondary,
         marginBottom: 2,
+        fontFamily: FONTS.bold,
     },
     categoryBannerValue: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: COLORS.secondary,
+        fontSize: 16,
+        fontFamily: FONTS.heading,
+        color: COLORS.primary,
     },
     photoContainer: {
         alignItems: 'center',
         marginBottom: SPACING.xl,
     },
     photoPlaceholder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         backgroundColor: COLORS.surface,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: COLORS.border,
         borderStyle: 'dashed',
         alignItems: 'center',
@@ -314,17 +320,18 @@ const styles = StyleSheet.create({
     photoText: {
         fontSize: 12,
         color: COLORS.textSecondary,
-        marginTop: 4,
+        marginTop: 6,
+        fontFamily: FONTS.bold,
     },
     form: {
-        marginTop: SPACING.md,
+        marginTop: SPACING.sm,
     },
     label: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '700',
         color: COLORS.text,
         marginBottom: SPACING.sm,
-        marginTop: SPACING.md,
+        marginTop: SPACING.lg,
     },
     areaContainer: {
         flexDirection: 'row',
@@ -343,28 +350,30 @@ const styles = StyleSheet.create({
     areaButtonActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
+        ...SHADOWS.soft,
     },
     areaButtonText: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
         color: COLORS.textSecondary,
     },
     areaButtonTextActive: {
         color: COLORS.white,
     },
     completeButton: {
-        marginTop: SPACING.lg,
+        marginTop: SPACING.xl,
+        paddingVertical: SPACING.md,
     },
     chipContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: SPACING.lg,
+        gap: 10,
+        marginBottom: SPACING.md,
     },
     chip: {
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingVertical: 10,
+        borderRadius: BORDER_RADIUS.full,
         backgroundColor: COLORS.surface,
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -372,10 +381,11 @@ const styles = StyleSheet.create({
     chipActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
+        ...SHADOWS.soft,
     },
     chipText: {
         fontSize: 13,
-        fontWeight: '600',
+        fontWeight: '700',
         color: COLORS.textSecondary,
     },
     chipTextActive: {

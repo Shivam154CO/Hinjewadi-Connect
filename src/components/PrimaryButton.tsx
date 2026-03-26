@@ -7,7 +7,7 @@ import {
     ViewStyle,
     TextStyle
 } from 'react-native';
-import { COLORS, BORDER_RADIUS, SPACING } from '../theme/theme';
+import { COLORS, BORDER_RADIUS, SPACING, FONTS } from '../theme/theme';
 
 interface PrimaryButtonProps {
     title: string;
@@ -41,14 +41,17 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                 styles.button,
                 {
                     backgroundColor: getBackgroundColor(),
-                    borderWidth: variant === 'outline' ? 1 : 0,
+                    borderWidth: variant === 'outline' ? 1.5 : 0,
                     borderColor: variant === 'outline' ? COLORS.primary : 'transparent'
                 },
                 style
             ]}
             onPress={onPress}
             disabled={disabled || loading}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
+            accessibilityLabel={title}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !!(disabled || loading) }}
         >
             {loading ? (
                 <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.white} />
@@ -67,15 +70,16 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
 const styles = StyleSheet.create({
     button: {
-        paddingVertical: SPACING.md,
+        paddingVertical: 18,
         paddingHorizontal: SPACING.lg,
-        borderRadius: BORDER_RADIUS.md,
+        borderRadius: BORDER_RADIUS.lg,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 56,
+        minHeight: 60,
     },
     text: {
-        fontSize: 16,
-        fontWeight: '700',
+        fontSize: 18,
+        fontFamily: FONTS.heading,
+        letterSpacing: 0.5,
     },
 });

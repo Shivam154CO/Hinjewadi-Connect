@@ -2,12 +2,13 @@ import { supabase } from '../supabase/supabaseClient';
 import { Room } from '../types';
 
 export const roomService = {
-    async getRooms(): Promise<Room[]> {
+    async getRooms(limit: number = 20, offset: number = 0): Promise<Room[]> {
         const { data, error } = await supabase
             .from('rooms')
             .select('*')
             .eq('status', 'Available')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
 
         if (error) {
             console.error('Error fetching rooms:', error);
