@@ -1,9 +1,9 @@
-import i18n from 'i18next';
+import i18n, { Resource, LanguageDetectorAsyncModule } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const resources = {
+const resources: Resource = {
   en: {
     translation: {
       welcome: 'Welcome to Hinjewadi-Connect',
@@ -80,20 +80,21 @@ const resources = {
 
 const LANGUAGE_KEY = 'user-language';
 
-const languageDetector = {
+const languageDetector: LanguageDetectorAsyncModule = {
   type: 'languageDetector',
   async: true,
-  detect: async (callback: (lang: string) => void) => {
-    try {
-      const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
-      if (savedLanguage) {
-        return callback(savedLanguage);
-      }
-      return callback(Localization.getLocales()[0].languageCode || 'en');
-    } catch (error) {
-      console.log('Error detecting language', error);
-      callback('en');
-    }
+  detect: (callback: (lang: string | undefined) => void) => {
+    AsyncStorage.getItem(LANGUAGE_KEY)
+      .then((savedLanguage) => {
+        if (savedLanguage) {
+          return callback(savedLanguage);
+        }
+        return callback(Localization.getLocales()[0].languageCode || 'en');
+      })
+      .catch((error) => {
+        console.log('Error detecting language', error);
+        callback('en');
+      });
   },
   init: () => {},
   cacheUserLanguage: async (language: string) => {
@@ -104,7 +105,7 @@ const languageDetector = {
 };
 
 i18n
-  .use(languageDetector as any)
+  .use(languageDetector)
   .use(initReactI18next)
   .init({
     resources,
