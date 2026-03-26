@@ -8,31 +8,30 @@ import {
     ScrollView,
     TextInput,
     Dimensions,
-    ActivityIndicator
+    ActivityIndicator,
+    RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { RoomCard } from '../../components/RoomCard';
 import { Room, MainTabScreenProps } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 import { roomService } from '../../services/roomService';
 import { PHASE_COORDS, PhaseKey, sortByPhaseDistance } from '../../utils/geoUtils';
 import { useAuth } from '../../context/AuthContext';
 
-const { width } = Dimensions.get('window');
-
 const CATEGORIES = [
-    { key: 'All', label: 'All' },
-    { key: 'Room', label: 'Single Room' },
-    { key: 'PG', label: 'PG' },
-    { key: 'Flat', label: 'Flat' },
+    { key: 'All', label: 'All', icon: 'apps' },
+    { key: 'Room', label: 'Rooms', icon: 'bed-outline' },
+    { key: 'PG', label: 'PGs', icon: 'home-group' },
+    { key: 'Flat', label: 'Flats', icon: 'office-building' },
 ];
 
 export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation }) => {
     const { user } = useAuth();
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'recent' | 'distance'>('recent');
@@ -54,6 +53,12 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
         }
     };
 
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchRooms();
+        setRefreshing(false);
+    };
+
     const filteredRooms = rooms.filter(room => {
         const categoryMatch = selectedCategory === 'All' || room.type === selectedCategory;
         const searchMatch = searchQuery === '' ||
@@ -66,102 +71,100 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
         ? sortByPhaseDistance(filteredRooms, selectedPhase)
         : filteredRooms;
 
-    const categoryCounts = rooms.reduce((acc, room) => {
-        acc[room.type] = (acc[room.type] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+    const getCategoryCount = (key: string) => 
+        key === 'All' ? rooms.length : rooms.filter(r => r.type === key).length;
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={COLORS.text} />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color="#1E293B" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Rooms & PGs</Text>
-                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>Premium Living</Text>
+                <TouchableOpacity style={styles.iconBtn}>
+                    <MaterialCommunityIcons name="map-search-outline" size={24} color={COLORS.primary} />
+                </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
+            <View style={styles.searchSection}>
                 <View style={styles.searchBar}>
-                    <MaterialCommunityIcons name="magnify" size={20} color={COLORS.textSecondary} />
+                    <MaterialCommunityIcons name="magnify" size={22} color="#94A3B8" />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search rooms, PGs..."
-                        placeholderTextColor={COLORS.textSecondary}
+                        placeholder="Search area, landmark or PG name..."
+                        placeholderTextColor="#94A3B8"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <MaterialCommunityIcons name="close-circle" size={18} color={COLORS.textSecondary} />
+                            <MaterialCommunityIcons name="close-circle" size={18} color="#94A3B8" />
                         </TouchableOpacity>
                     )}
                 </View>
             </View>
 
-            {/* Sort & Proximity Filter */}
-            <View style={styles.sortContainer}>
-                <View style={styles.sortToggle}>
-                    <TouchableOpacity
-                        style={[styles.sortBtn, sortBy === 'recent' && styles.sortBtnActive]}
-                        onPress={() => setSortBy('recent')}
-                    >
-                        <MaterialCommunityIcons name="clock-outline" size={16} color={sortBy === 'recent' ? COLORS.white : COLORS.textSecondary} />
-                        <Text style={[styles.sortBtnText, sortBy === 'recent' && styles.sortBtnTextActive]}>Recent</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.sortBtn, sortBy === 'distance' && styles.sortBtnActive]}
-                        onPress={() => setSortBy('distance')}
-                    >
-                        <MaterialCommunityIcons name="map-marker-distance" size={16} color={sortBy === 'distance' ? COLORS.white : COLORS.textSecondary} />
-                        <Text style={[styles.sortBtnText, sortBy === 'distance' && styles.sortBtnTextActive]}>Nearby</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {sortBy === 'distance' && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.phaseScroll}>
-                        {(Object.keys(PHASE_COORDS) as PhaseKey[]).map(phase => (
-                            <TouchableOpacity
-                                key={phase}
-                                style={[styles.phaseChip, selectedPhase === phase && styles.phaseChipActive]}
-                                onPress={() => setSelectedPhase(phase)}
-                            >
-                                <Text style={[styles.phaseChipText, selectedPhase === phase && styles.phaseChipTextActive]}>{phase}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                )}
-            </View>
-
-            {/* Category Filter */}
-            <View style={styles.categoryContainer}>
+            <View style={styles.filterSection}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
                     {CATEGORIES.map(cat => (
                         <TouchableOpacity
                             key={cat.key}
-                            style={[
-                                styles.categoryChip,
-                                selectedCategory === cat.key && styles.categoryChipActive
-                            ]}
+                            style={[styles.catChip, selectedCategory === cat.key && styles.catChipActive]}
                             onPress={() => setSelectedCategory(cat.key)}
                         >
-                            <Text style={[
-                                styles.categoryChipText,
-                                selectedCategory === cat.key && styles.categoryChipTextActive
-                            ]}>
-                                {cat.label} {cat.key === 'All' ? `(${rooms.length})` : `(${categoryCounts[cat.key] || 0})`}
+                            <MaterialCommunityIcons 
+                                name={cat.icon as any} 
+                                size={18} 
+                                color={selectedCategory === cat.key ? '#FFFFFF' : '#64748B'} 
+                            />
+                            <Text style={[styles.catLabel, selectedCategory === cat.key && styles.catLabelActive]}>
+                                {cat.label}
                             </Text>
+                            <View style={[styles.countBadge, selectedCategory === cat.key && styles.countBadgeActive]}>
+                                <Text style={[styles.countText, selectedCategory === cat.key && styles.countTextActive]}>
+                                    {getCategoryCount(cat.key)}
+                                </Text>
+                            </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
+
+                <View style={styles.sortRow}>
+                    <View style={styles.sortToggleContainer}>
+                        <TouchableOpacity 
+                            style={[styles.sortSide, sortBy === 'recent' && styles.sortSideActive]}
+                            onPress={() => setSortBy('recent')}
+                        >
+                            <Text style={[styles.sortSideText, sortBy === 'recent' && styles.sortSideTextActive]}>Recent</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.sortSide, sortBy === 'distance' && styles.sortSideActive]}
+                            onPress={() => setSortBy('distance')}
+                        >
+                            <Text style={[styles.sortSideText, sortBy === 'distance' && styles.sortSideTextActive]}>Nearby</Text>
+                        </TouchableOpacity>
+                    </View>
+                    
+                    {sortBy === 'distance' && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.phaseScroll}>
+                            {(Object.keys(PHASE_COORDS) as PhaseKey[]).map(phase => (
+                                <TouchableOpacity
+                                    key={phase}
+                                    style={[styles.phaseChip, selectedPhase === phase && styles.phaseChipActive]}
+                                    onPress={() => setSelectedPhase(phase)}
+                                >
+                                    <Text style={[styles.phaseText, selectedPhase === phase && styles.phaseTextActive]}>{phase}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
             </View>
 
-            {/* Room List */}
-            {loading ? (
-                <View style={styles.loadingContainer}>
+            {loading && !refreshing ? (
+                <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={styles.loaderText}>Finding the best stays for you...</Text>
                 </View>
             ) : (
                 <FlatList
@@ -169,6 +172,9 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                    }
                     renderItem={({ item }) => (
                         <RoomCard
                             room={item}
@@ -177,188 +183,114 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                     )}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <MaterialCommunityIcons name="home-off" size={60} color={COLORS.border} />
-                            <Text style={styles.emptyText}>No listings found.</Text>
-                            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+                            <MaterialCommunityIcons name="home-search-outline" size={80} color="#E2E8F0" />
+                            <Text style={styles.emptyTitle}>No matching stays</Text>
+                            <Text style={styles.emptySubtitle}>Try changing filters or searching a different area.</Text>
+                            <TouchableOpacity 
+                                style={styles.clearBtn} 
+                                onPress={() => { setSelectedCategory('All'); setSearchQuery(''); setSortBy('recent'); }}
+                            >
+                                <Text style={styles.clearBtnText}>Clear All Filters</Text>
+                            </TouchableOpacity>
                         </View>
                     }
                 />
             )}
 
-            {/* FAB */}
             <TouchableOpacity
                 style={styles.fab}
                 onPress={() => navigation.navigate('PostListing')}
             >
-                <MaterialCommunityIcons name="plus" size={28} color={COLORS.white} />
+                <MaterialCommunityIcons name="plus" size={32} color="#FFFFFF" />
             </TouchableOpacity>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#F8FAFB',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
+        paddingHorizontal: 20,
+        paddingVertical: 14,
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.white,
+    iconBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: '#F8FAFC',
         alignItems: 'center',
         justifyContent: 'center',
-        ...SHADOWS.light,
     },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: COLORS.text,
-    },
-    searchContainer: {
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.md,
-    },
+    headerTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B', letterSpacing: -0.5 },
+    searchSection: { paddingHorizontal: 20, marginBottom: 16 },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
-        borderRadius: BORDER_RADIUS.lg,
-        paddingHorizontal: SPACING.md,
-        height: 48,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        gap: SPACING.sm,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        height: 54,
     },
-    searchInput: {
-        flex: 1,
-        fontSize: 14,
-        color: COLORS.text,
-    },
-    categoryContainer: {
-        marginBottom: SPACING.md,
-    },
-    categoryScroll: {
-        paddingHorizontal: SPACING.lg,
-        gap: SPACING.sm,
-    },
-    categoryChip: {
-        paddingHorizontal: 18,
-        paddingVertical: 10,
-        borderRadius: BORDER_RADIUS.full,
-        backgroundColor: COLORS.white,
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-    },
-    categoryChipActive: {
-        backgroundColor: COLORS.success,
-        borderColor: COLORS.success,
-    },
-    categoryChipText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: COLORS.textSecondary,
-    },
-    categoryChipTextActive: {
-        color: COLORS.white,
-    },
-    listContent: {
-        paddingHorizontal: SPACING.lg,
-        paddingBottom: 100,
-    },
-    emptyContainer: {
+    searchInput: { flex: 1, marginLeft: 12, fontSize: 15, color: '#1E293B', fontWeight: '600' },
+    filterSection: { marginBottom: 12 },
+    categoryScroll: { paddingLeft: 20, paddingBottom: 16, gap: 10 },
+    catChip: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 100,
+        backgroundColor: '#FFFFFF',
+        paddingLeft: 12,
+        paddingRight: 8,
+        paddingVertical: 8,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: '#F1F5F9',
+        gap: 8,
     },
-    emptyText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: COLORS.text,
-        marginTop: SPACING.md,
+    catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    catLabel: { fontSize: 13, fontWeight: '700', color: '#64748B' },
+    catLabelActive: { color: '#FFFFFF' },
+    countBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+    countBadgeActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
+    countText: { fontSize: 10, fontWeight: '800', color: '#94A3B8' },
+    countTextActive: { color: '#FFFFFF' },
+    sortRow: { paddingHorizontal: 20, gap: 12 },
+    sortToggleContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F1F5F9',
+        borderRadius: 12,
+        padding: 4,
+        width: 200,
     },
-    emptySubtext: {
-        fontSize: 13,
-        color: COLORS.textSecondary,
-        marginTop: 4,
-    },
+    sortSide: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+    sortSideActive: { backgroundColor: '#FFFFFF', ...SHADOWS.light },
+    sortSideText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
+    sortSideTextActive: { color: COLORS.primary },
+    phaseScroll: { gap: 8 },
+    phaseChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
+    phaseChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '05' },
+    phaseText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
+    phaseTextActive: { color: COLORS.primary },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
+    loaderText: { marginTop: 16, fontSize: 15, fontWeight: '600', color: '#64748B' },
+    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+    emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 40 },
+    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginTop: 20 },
+    emptySubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginTop: 8, lineHeight: 22 },
+    clearBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.primary },
+    clearBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
     fab: {
         position: 'absolute',
-        bottom: SPACING.xl,
-        right: SPACING.lg,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: COLORS.success,
+        bottom: 30,
+        right: 20,
+        width: 64,
+        height: 64,
+        borderRadius: 22,
+        backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.medium,
-    },
-    sortContainer: {
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.md,
-        gap: SPACING.sm,
-    },
-    sortToggle: {
-        flexDirection: 'row',
-        backgroundColor: '#EEF2F6',
-        borderRadius: BORDER_RADIUS.md,
-        padding: 4,
-    },
-    sortBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        borderRadius: BORDER_RADIUS.md,
-        gap: 6,
-    },
-    sortBtnActive: {
-        backgroundColor: COLORS.primary,
-        ...SHADOWS.light,
-    },
-    sortBtnText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: COLORS.textSecondary,
-    },
-    sortBtnTextActive: {
-        color: COLORS.white,
-    },
-    phaseScroll: {
-        gap: SPACING.sm,
-    },
-    phaseChip: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: BORDER_RADIUS.full,
-        backgroundColor: COLORS.white,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    phaseChipActive: {
-        backgroundColor: COLORS.primary + '15',
-        borderColor: COLORS.primary,
-    },
-    phaseChipText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: COLORS.textSecondary,
-    },
-    phaseChipTextActive: {
-        color: COLORS.primary,
     },
 });

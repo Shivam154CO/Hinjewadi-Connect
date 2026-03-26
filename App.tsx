@@ -45,7 +45,7 @@ export default function App() {
                 <SafeAreaProvider>
                     <AuthProvider>
                         <AppNavigator />
-                        <StatusBar style="auto" />
+                        <StatusBar style="dark" />
                     </AuthProvider>
                 </SafeAreaProvider>
             </QueryProvider>
