@@ -105,13 +105,6 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                     ) : (
                         <View style={styles.infoList}>
                             <View style={styles.infoItem}>
-                                <MaterialCommunityIcons name="phone" size={20} color={COLORS.primary} />
-                                <View style={styles.infoTextContainer}>
-                                    <Text style={styles.infoLabel}>Phone Number</Text>
-                                    <Text style={styles.infoValue}>+91 {user?.phone || 'Not provided'}</Text>
-                                </View>
-                            </View>
-                            <View style={styles.infoItem}>
                                 <MaterialCommunityIcons name="map-marker" size={20} color={COLORS.primary} />
                                 <View style={styles.infoTextContainer}>
                                     <Text style={styles.infoLabel}>Location</Text>

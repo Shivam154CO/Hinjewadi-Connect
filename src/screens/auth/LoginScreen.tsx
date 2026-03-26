@@ -1,36 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps } from '../../types';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
-import { validation } from '../../utils/validation';
 import { errorHandler } from '../../utils/errorHandler';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity } from 'react-native';
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
     const { t, i18n } = useTranslation();
-    const [phone, setPhone] = useState('');
-    const { login, isLoading } = useAuth();
+    const [name, setName] = useState('');
+    const { login, isProcessing } = useAuth();
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
     };
 
-    const handleLogin = async () => {
-        const phoneValidation = validation.phone(phone.trim());
-        if (!phoneValidation.isValid) {
-            errorHandler.handleValidationError('Phone', phoneValidation.error || 'Invalid phone number');
+    const handleContinue = async () => {
+        if (!name.trim()) {
+            errorHandler.handleValidationError('Name', 'Please enter your name to continue');
             return;
         }
+        
         try {
-            const isRegistered = await login(phone.trim());
-            if (isRegistered) {
-                // If user exists, AuthContext handles state and AppNavigator will switch to MainStack
-            } else {
+            const isRegistered = await login(name.trim());
+            if (!isRegistered) {
                 navigation.navigate('RoleSelection');
             }
         } catch (err: any) {
@@ -60,17 +56,18 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
             <View style={styles.inner}>
                 <Text style={styles.title}>{t('welcome')}</Text>
                 <Text style={styles.subtitle}>{t('login_subtitle')}</Text>
+                
                 <AppTextInput
-                    label="Phone"
-                    placeholder={t('phone_placeholder')}
-                    keyboardType="phone-pad"
-                    value={phone}
-                    onChangeText={setPhone}
+                    label={t('name')}
+                    placeholder={t('name_placeholder')}
+                    value={name}
+                    onChangeText={setName}
                 />
+                
                 <PrimaryButton
                     title={t('continue')}
-                    onPress={handleLogin}
-                    loading={isLoading}
+                    onPress={handleContinue}
+                    loading={isProcessing}
                     style={styles.button}
                 />
             </View>

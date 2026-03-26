@@ -7,8 +7,8 @@ const resources: Resource = {
   en: {
     translation: {
       welcome: 'Welcome to Hinjewadi-Connect',
-      login_subtitle: 'Enter your mobile number to continue',
-      phone_placeholder: '9999999999',
+      login_subtitle: 'Enter your name to continue',
+      name_placeholder: 'John Doe',
       continue: 'Continue',
       role_selection_title: 'Who are you?',
       role_selection_subtitle: 'Choose your role to get started',
@@ -31,8 +31,8 @@ const resources: Resource = {
   hi: {
     translation: {
       welcome: 'हिंजवडी-कनेक्ट में आपका स्वागत है',
-      login_subtitle: 'जारी रखने के लिए अपना मोबाइल नंबर दर्ज करें',
-      phone_placeholder: '9999999999',
+      login_subtitle: 'जारी रखने के लिए अपना नाम दर्ज करें',
+      name_placeholder: 'राज कुमार',
       continue: 'आगे बढ़ें',
       role_selection_title: 'आप कौन हैं?',
       role_selection_subtitle: 'शुरू करने के लिए अपनी भूमिका चुनें',
@@ -55,8 +55,8 @@ const resources: Resource = {
   mr: {
     translation: {
       welcome: 'हिंजवडी-कनेक्ट मध्ये आपले स्वागत आहे',
-      login_subtitle: 'सुरू ठेवण्यासाठी तुमचा मोबाईल नंबर प्रविष्ट करा',
-      phone_placeholder: '9999999999',
+      login_subtitle: 'सुरू ठेवण्यासाठी तुमचे नाव प्रविष्ट करा',
+      name_placeholder: 'राहुल पाटील',
       continue: 'पुढे चला',
       role_selection_title: 'तुम्ही कोण आहात?',
       role_selection_subtitle: 'सुरू करण्यासाठी तुमची भूमिका निवडा',

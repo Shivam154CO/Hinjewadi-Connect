@@ -244,6 +244,14 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
                     </TouchableOpacity>
                 )}
 
+                <AppTextInput
+                    label="Contact Number"
+                    placeholder="Enter phone number for inquiries"
+                    keyboardType="phone-pad"
+                    value={contactPhone}
+                    onChangeText={setContactPhone}
+                />
+
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Description</Text>
                     <TextInput

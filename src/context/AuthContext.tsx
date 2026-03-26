@@ -1,13 +1,15 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { UserProfile, UserRole, ListingCategory } from '../types';
 import { supabase } from '../supabase/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
     user: UserProfile | null;
     role: UserRole;
     listingCategory: ListingCategory;
     isLoading: boolean;
-    login: (phone: string) => Promise<boolean>;
+    isProcessing: boolean;
+    login: (name: string) => Promise<boolean>;
     completeProfile: (profile: Partial<UserProfile>) => Promise<void>;
     updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
     setRole: (role: UserRole) => Promise<void>;
@@ -21,27 +23,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<UserProfile | null>(null);
     const [role, setRoleState] = useState<UserRole>(null);
     const [listingCategory, setListingCategoryState] = useState<ListingCategory>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [phone, setPhone] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [name, setName] = useState<string>('');
 
     useEffect(() => {
-        // Check for existing session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                fetchUserProfile(session.user.id);
+        const loadSession = async () => {
+            try {
+                const storedUserId = await AsyncStorage.getItem('user_id');
+                if (storedUserId) {
+                    await fetchUserProfile(storedUserId);
+                }
+            } catch (e) {
+                console.error('Failed to load local session', e);
+            } finally {
+                setIsLoading(false);
             }
-        });
+        };
 
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                fetchUserProfile(session.user.id);
-            } else {
-                setUser(null);
-            }
-        });
-
-        return () => subscription.unsubscribe();
+        loadSession();
     }, []);
 
     const fetchUserProfile = async (userId: string) => {
@@ -54,31 +54,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (error) throw error;
             if (data) {
-                setUser(data);
+                const formattedUser: UserProfile = {
+                    id: data.id,
+                    name: data.name,
+                    phone: data.phone,
+                    role: data.role,
+                    listingCategory: data.listing_category,
+                    area: data.area,
+                    photoUrl: data.photo_url,
+                    email: data.email,
+                    availability: data.availability,
+                };
+                setUser(formattedUser);
                 setRoleState(data.role);
                 setListingCategoryState(data.listing_category);
             }
         } catch (error) {
             console.error('Error fetching user profile:', error);
+            // If user doesn't exist anymore in DB, clear local storage
+            await AsyncStorage.removeItem('user_id');
         }
     };
 
-    const login = async (phone: string): Promise<boolean> => {
-        setIsLoading(true);
-        setPhone(phone);
+    const login = async (inputName: string): Promise<boolean> => {
+        setIsProcessing(true);
+        setName(inputName);
         try {
-            // Check if user exists in the database
+            // Check if user exists with this name in the database
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
-                .eq('phone', phone)
-                .single();
+                .eq('name', inputName.trim())
+                .limit(1)
+                .maybeSingle();
 
             if (data) {
                 // User exists, fetch profile and set state
-                setUser(data);
+                const formattedUser: UserProfile = {
+                    id: data.id,
+                    name: data.name,
+                    phone: data.phone,
+                    role: data.role,
+                    listingCategory: data.listing_category,
+                    area: data.area,
+                    photoUrl: data.photo_url,
+                    email: data.email,
+                    availability: data.availability,
+                };
+                setUser(formattedUser);
                 setRoleState(data.role);
                 setListingCategoryState(data.listing_category);
+                
+                // Store locally for autologin
+                await AsyncStorage.setItem('user_id', data.id);
                 return true; // Already registered
             } else {
                 // User doesn't exist
@@ -90,29 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(null);
             return false;
         } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const verifyOtp = async (otp: string) => {
-        setIsLoading(true);
-        try {
-            const { data, error } = await supabase.auth.verifyOtp({
-                phone: `+91${phone}`,
-                token: otp,
-                type: 'sms',
-            });
-
-            if (error) throw error;
-
-            if (data.user) {
-                await fetchUserProfile(data.user.id);
-            }
-        } catch (error) {
-            console.error('Error verifying OTP:', error);
-            throw error;
-        } finally {
-            setIsLoading(false);
+            setIsProcessing(false);
         }
     };
 
@@ -149,7 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updateProfile = async (updates: Partial<UserProfile>) => {
-        setIsLoading(true);
+        setIsProcessing(true);
         try {
             if (!user) throw new Error('No user logged in');
 
@@ -170,24 +176,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error updating profile:', error);
             throw error;
         } finally {
-            setIsLoading(false);
+            setIsProcessing(false);
         }
     };
 
     const completeProfile = async (profile: Partial<UserProfile>) => {
-        setIsLoading(true);
+        setIsProcessing(true);
         try {
-            // Get current auth user
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-
-            if (!authUser) {
-                throw new Error('No authenticated user found');
-            }
-
-            const newUser: UserProfile = {
-                id: authUser.id,
-                name: profile.name || '',
-                phone: profile.phone || phone,
+            const newId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+            });
+            const userProfile: UserProfile = {
+                id: newId,
+                name: profile.name || name,
                 role: role,
                 listingCategory: listingCategory,
                 area: profile.area || 'Phase 1',
@@ -197,12 +200,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Save to Supabase (User table)
             const { error: userError } = await supabase
                 .from('users')
-                .upsert({
-                    id: user?.id || (Math.random().toString(36).substring(7)), // Fallback ID if no auth
-                    name: profile.name,
-                    phone: profile.phone || phone,
-                    role: profile.role || role,
-                    listing_category: profile.listingCategory || listingCategory,
+                .insert({
+                    id: newId,
+                    name: profile.name || name,
+                    role: profile.role || role || 'tenant',
+                    listing_category: profile.listingCategory || listingCategory || null,
                     area: profile.area || 'Phase 1',
                     created_at: new Date().toISOString()
                 });
@@ -211,46 +213,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             // Handle Worker Sub-profiles
             const p: any = profile;
-            if (p.role === 'worker') {
+            if ((profile.role || role) === 'worker') {
                 if (p.workerType === 'service') {
                     await supabase.from('service_providers').upsert({
-                        user_id: authUser.id,
-                        name: p.name,
-                        phone: profile.phone || phone,
+                        user_id: newId,
+                        name: p.name || name,
                         category: p.serviceCategory,
                         experience: p.experience,
                         skills: p.skills,
                         price_range: p.priceRange,
-                        areas: [p.area],
+                        areas: [p.area || 'Phase 1'],
                         availability: 'Available'
                     });
                 } else if (p.workerType === 'job_seeker') {
                     await supabase.from('job_seeker_profiles').upsert({
-                        user_id: authUser.id,
-                        name: p.name,
-                        phone: profile.phone || phone,
+                        user_id: newId,
+                        name: p.name || name,
                         category: p.jobCategory,
                         skills: p.skills,
                         experience: p.experience,
                         expected_salary: p.expectedSalary,
-                        area: p.area,
+                        area: p.area || 'Phase 1',
                         availability: 'Immediately'
                     });
                 }
             }
 
-            setUser(newUser);
-        } catch (error) {
-            console.error('Error creating profile:', error);
+            setUser(userProfile);
+            await AsyncStorage.setItem('user_id', newId);
+        } catch (error: any) {
+            console.error('Error creating profile DETAILS:', error?.message || error || 'Unknown Error');
             throw error;
         } finally {
-            setIsLoading(false);
+            setIsProcessing(false);
         }
     };
 
     const logout = async () => {
         try {
-            await supabase.auth.signOut();
+            await AsyncStorage.removeItem('user_id');
         } catch (error) {
             console.error('Error logging out:', error);
         }
@@ -265,6 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role,
             listingCategory,
             isLoading,
+            isProcessing,
             login,
             completeProfile,
             updateProfile,

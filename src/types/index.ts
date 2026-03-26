@@ -10,7 +10,7 @@ export type ListingCategory = 'property' | 'job' | 'both' | null;
 export interface UserProfile {
     id: string;
     name: string;
-    phone: string;
+    phone?: string;
     role: UserRole;
     listingCategory: ListingCategory; // For employer role - what they can post
     area: string; // Phase 1, 2, or 3
@@ -21,7 +21,6 @@ export interface UserProfile {
 
 export type AuthStackParamList = {
     Login: undefined;
-    OTP: { phone: string };
     RoleSelection: undefined;
     ProfileCreation: {
         role: UserRole;

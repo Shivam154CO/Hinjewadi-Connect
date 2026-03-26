@@ -63,7 +63,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
     const [salary, setSalary] = useState('');
     const [skills, setSkills] = useState('');
 
-    const { completeProfile, isLoading } = useAuth();
+    const { completeProfile, isProcessing } = useAuth();
 
     const handleComplete = async () => {
         if (!name.trim()) return;
@@ -233,7 +233,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                         <PrimaryButton
                             title={t('save')}
                             onPress={handleComplete}
-                            loading={isLoading}
+                            loading={isProcessing}
                             style={styles.completeButton}
                         />
                     </View>
