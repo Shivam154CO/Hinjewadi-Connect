@@ -8,14 +8,18 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { roomService } from '../../services/roomService';
 import { jobService } from '../../services/jobService';
 
+import { useTranslation } from 'react-i18next';
+import { AIInsights } from '../../components/AIInsights';
+
 const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
     const [recentJobs, setRecentJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const userName = user?.name?.split(' ')[0] || 'Guest';
+    const userName = user?.name?.split(' ')[0] || t('guest');
 
     useEffect(() => {
         loadDashboardData();
@@ -46,25 +50,28 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const renderTenantHome = () => (
         <View style={styles.dashboard}>
             <View style={styles.welcomeSection}>
-                <Text style={styles.greeting}>Namaste, {userName}</Text>
-                <Text style={styles.subtitle}>Everything you need in {user?.area || 'Hinjewadi'}</Text>
+                <Text style={styles.greeting}>{t('namaste')}, {userName}</Text>
+                <Text style={styles.subtitle}>{t('home_subtitle', { area: user?.area || 'Hinjewadi' })}</Text>
             </View>
+
+            {/* AI Insights - Smart Market Analysis */}
+            <AIInsights />
 
             {/* Category Grid - Dynamic & Clean */}
             <View style={styles.categoryGrid}>
-                <CategoryItem title="Rooms" icon="home-variant" color="#4F46E5" onPress={() => navigation.navigate('Rooms')} />
-                <CategoryItem title="Jobs" icon="briefcase" color="#10B981" onPress={() => navigation.navigate('Jobs')} />
-                <CategoryItem title="Services" icon="account-group" color="#F59E0B" onPress={() => navigation.navigate('Services')} />
-                <CategoryItem title="Post" icon="plus-thick" color="#8B5CF6" onPress={() => navigation.navigate('PostListing')} />
+                <CategoryItem title={t('rooms')} icon="home-variant" color="#4F46E5" onPress={() => navigation.navigate('Rooms')} />
+                <CategoryItem title={t('jobs')} icon="briefcase" color="#10B981" onPress={() => navigation.navigate('Jobs')} />
+                <CategoryItem title={t('services')} icon="account-group" color="#F59E0B" onPress={() => navigation.navigate('Services')} />
+                <CategoryItem title={t('post')} icon="plus-thick" color="#8B5CF6" onPress={() => navigation.navigate('PostListing')} />
             </View>
 
             {/* Live Rooms Section */}
             {featuredRooms.length > 0 && (
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Featured Rooms</Text>
+                        <Text style={styles.sectionTitle}>{t('featured_rooms')}</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Rooms')}>
-                            <Text style={styles.seeAllText}>See All</Text>
+                            <Text style={styles.seeAllText}>{t('see_all')}</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
@@ -86,9 +93,9 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             {recentJobs.length > 0 && (
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Latest Jobs</Text>
+                        <Text style={styles.sectionTitle}>{t('latest_jobs')}</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Jobs')}>
-                            <Text style={styles.seeAllText}>See All</Text>
+                            <Text style={styles.seeAllText}>{t('see_all')}</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
