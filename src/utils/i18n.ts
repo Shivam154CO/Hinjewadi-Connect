@@ -128,11 +128,11 @@ const languageDetector: LanguageDetectorAsyncModule = {
         callback('en');
       });
   },
-  init: () => {},
+  init: () => { },
   cacheUserLanguage: async (language: string) => {
     try {
       await AsyncStorage.setItem(LANGUAGE_KEY, language);
-    } catch (error) {}
+    } catch (error) { }
   },
 };
 
@@ -149,3 +149,4 @@ i18n
   });
 
 export default i18n;
+

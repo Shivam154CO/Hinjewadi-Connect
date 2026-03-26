@@ -27,11 +27,11 @@ const JOB_CATEGORIES: JobCategory[] = ['Peon', 'Guard', 'Office Boy', 'Watchman'
 
 export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = ({ navigation }) => {
     const { user } = useAuth();
-    
+
     // Mode selection Stage
     const [postingType, setPostingType] = useState<'room' | 'job' | null>(
-        user?.listingCategory === 'job' ? 'job' : 
-        user?.listingCategory === 'property' ? 'room' : null
+        user?.listingCategory === 'job' ? 'job' :
+            user?.listingCategory === 'property' ? 'room' : null
     );
 
     // Common fields
@@ -150,7 +150,7 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
                 </View>
                 <View style={styles.modeSelection}>
                     <Text style={styles.modeTitle}>What are you posting today?</Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.modeCard}
                         onPress={() => setPostingType('room')}
                     >
@@ -160,7 +160,7 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
                             <Text style={styles.modeCardSub}>List a Flat, PG, or Room to rent</Text>
                         </View>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.modeCard}
                         onPress={() => setPostingType('job')}
                     >
@@ -192,8 +192,8 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {postingType === 'room' ? renderSelector('Room Type', TYPES, roomType, setRoomType) :
-                 renderSelector('Job Category', JOB_CATEGORIES, jobCategory, (v) => setJobCategory(v as any))}
-                
+                    renderSelector('Job Category', JOB_CATEGORIES, jobCategory, (v) => setJobCategory(v as any))}
+
                 {renderSelector('Locality', PHASES, phase, setPhase)}
 
                 <AppTextInput
@@ -231,14 +231,14 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
                 )}
 
                 {postingType === 'job' && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={styles.urgentToggle}
                         onPress={() => setIsUrgent(!isUrgent)}
                     >
-                        <MaterialCommunityIcons 
-                            name={isUrgent ? "checkbox-marked" : "checkbox-blank-outline"} 
-                            size={24} 
-                            color={isUrgent ? COLORS.error : COLORS.textSecondary} 
+                        <MaterialCommunityIcons
+                            name={isUrgent ? "checkbox-marked" : "checkbox-blank-outline"}
+                            size={24}
+                            color={isUrgent ? COLORS.error : COLORS.textSecondary}
                         />
                         <Text style={[styles.urgentText, isUrgent && { color: COLORS.error }]}>Mark as URGENT hiring</Text>
                     </TouchableOpacity>

@@ -71,7 +71,7 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
         ? sortByPhaseDistance(filteredRooms, selectedPhase)
         : filteredRooms;
 
-    const getCategoryCount = (key: string) => 
+    const getCategoryCount = (key: string) =>
         key === 'All' ? rooms.length : rooms.filter(r => r.type === key).length;
 
     return (
@@ -112,10 +112,10 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                             style={[styles.catChip, selectedCategory === cat.key && styles.catChipActive]}
                             onPress={() => setSelectedCategory(cat.key)}
                         >
-                            <MaterialCommunityIcons 
-                                name={cat.icon as any} 
-                                size={18} 
-                                color={selectedCategory === cat.key ? '#FFFFFF' : '#64748B'} 
+                            <MaterialCommunityIcons
+                                name={cat.icon as any}
+                                size={18}
+                                color={selectedCategory === cat.key ? '#FFFFFF' : '#64748B'}
                             />
                             <Text style={[styles.catLabel, selectedCategory === cat.key && styles.catLabelActive]}>
                                 {cat.label}
@@ -131,20 +131,20 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
 
                 <View style={styles.sortRow}>
                     <View style={styles.sortToggleContainer}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={[styles.sortSide, sortBy === 'recent' && styles.sortSideActive]}
                             onPress={() => setSortBy('recent')}
                         >
                             <Text style={[styles.sortSideText, sortBy === 'recent' && styles.sortSideTextActive]}>Recent</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={[styles.sortSide, sortBy === 'distance' && styles.sortSideActive]}
                             onPress={() => setSortBy('distance')}
                         >
                             <Text style={[styles.sortSideText, sortBy === 'distance' && styles.sortSideTextActive]}>Nearby</Text>
                         </TouchableOpacity>
                     </View>
-                    
+
                     {sortBy === 'distance' && (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.phaseScroll}>
                             {(Object.keys(PHASE_COORDS) as PhaseKey[]).map(phase => (
@@ -186,8 +186,8 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                             <MaterialCommunityIcons name="home-search-outline" size={80} color="#E2E8F0" />
                             <Text style={styles.emptyTitle}>No matching stays</Text>
                             <Text style={styles.emptySubtitle}>Try changing filters or searching a different area.</Text>
-                            <TouchableOpacity 
-                                style={styles.clearBtn} 
+                            <TouchableOpacity
+                                style={styles.clearBtn}
                                 onPress={() => { setSelectedCategory('All'); setSearchQuery(''); setSortBy('recent'); }}
                             >
                                 <Text style={styles.clearBtnText}>Clear All Filters</Text>

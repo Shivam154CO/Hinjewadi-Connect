@@ -62,8 +62,8 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
     const filteredJobs = jobs.filter(job => {
         const categoryMatch = !selectedCategory || job.category === selectedCategory;
         const areaMatch = selectedArea === 'All' || job.area === selectedArea;
-        const searchMatch = searchQuery === '' || 
-            job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        const searchMatch = searchQuery === '' ||
+            job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             job.company.toLowerCase().includes(searchQuery.toLowerCase());
         return categoryMatch && areaMatch && searchMatch;
     });
@@ -106,8 +106,8 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
 
                 <View style={styles.tabBar}>
                     {TABS.map((tab, idx) => (
-                        <TouchableOpacity 
-                            key={tab} 
+                        <TouchableOpacity
+                            key={tab}
                             style={[styles.tabItem, activeTab === idx && styles.tabActive]}
                             onPress={() => setActiveTab(idx)}
                         >
@@ -128,10 +128,10 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                                     onPress={() => setSelectedCategory(selectedCategory === cat.key ? null : cat.key)}
                                 >
                                     <View style={[styles.catIcon, selectedCategory === cat.key && styles.catIconActive]}>
-                                        <MaterialCommunityIcons 
-                                            name={cat.icon as any} 
-                                            size={20} 
-                                            color={selectedCategory === cat.key ? '#FFFFFF' : COLORS.primary} 
+                                        <MaterialCommunityIcons
+                                            name={cat.icon as any}
+                                            size={20}
+                                            color={selectedCategory === cat.key ? '#FFFFFF' : COLORS.primary}
                                         />
                                     </View>
                                     <Text style={[styles.catLabel, selectedCategory === cat.key && styles.catLabelActive]}>{cat.label}</Text>
@@ -141,7 +141,7 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
-                        
+
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.areaScroll}>
                             {AREA_FILTERS.map(area => (
                                 <TouchableOpacity
@@ -239,16 +239,16 @@ const styles = StyleSheet.create({
     tabLabelActive: { color: COLORS.primary },
     filterSection: { marginBottom: 16 },
     categoryScroll: { paddingLeft: 20, paddingBottom: 16, gap: 12 },
-    catChip: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        backgroundColor: '#F8FAFC', 
-        paddingLeft: 8, 
-        paddingRight: 14, 
-        paddingVertical: 8, 
-        borderRadius: 16, 
-        borderWidth: 1.5, 
-        borderColor: '#F1F5F9' 
+    catChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8FAFC',
+        paddingLeft: 8,
+        paddingRight: 14,
+        paddingVertical: 8,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#F1F5F9'
     },
     catChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '05' },
     catIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
