@@ -48,7 +48,7 @@ export const BORDER_RADIUS = {
 
 export const SHADOWS = {
     none: { elevation: 0, shadowOpacity: 0 },
-    soft: {
+    light: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,

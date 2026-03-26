@@ -150,7 +150,6 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                         />
                     </View>
                 </View>
-
                 {user?.role === 'worker' && (
                     <View style={styles.section}>
                         <View style={styles.switchRow}>
@@ -174,21 +173,51 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                                 ]} />
                             </TouchableOpacity>
                         </View>
+                        
+                        <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md }} />
+
+                        <TouchableOpacity 
+                            style={styles.manageBtn}
+                            onPress={() => navigation.navigate('CreateServiceProfile')}
+                        >
+                            <MaterialCommunityIcons name="account-tie-outline" size={24} color={COLORS.primary} />
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={styles.manageTitle}>Professional Profile</Text>
+                                <Text style={styles.manageSub}>Update your skills, experience and rates</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.textSecondary} />
+                        </TouchableOpacity>
                     </View>
                 )}
 
                 {user?.role === 'employer' && (
-                    <TouchableOpacity
-                        style={[styles.section, styles.managePostsButton]}
-                        onPress={() => navigation.navigate('ManagePosts')}
-                    >
-                        <MaterialCommunityIcons name="clipboard-text-outline" size={24} color={COLORS.primary} />
-                        <View style={{ marginLeft: SPACING.md }}>
-                            <Text style={styles.sectionTitle}>Manage My Postings</Text>
-                            <Text style={styles.sectionSubtitle}>View, edit or delete your listings</Text>
-                        </View>
-                        <MaterialCommunityIcons name="chevron-right" size={24} color={COLORS.textSecondary} style={{ marginLeft: 'auto' }} />
-                    </TouchableOpacity>
+                    <View style={styles.section}>
+                        <TouchableOpacity
+                            style={styles.manageBtn}
+                            onPress={() => navigation.navigate('PostListing')}
+                        >
+                            <MaterialCommunityIcons name="plus-circle-outline" size={24} color={COLORS.primary} />
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={styles.manageTitle}>Post New Listing</Text>
+                                <Text style={styles.manageSub}>Create a new Property or Job post</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.textSecondary} />
+                        </TouchableOpacity>
+
+                        <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: SPACING.md }} />
+
+                        <TouchableOpacity
+                            style={styles.manageBtn}
+                            onPress={() => navigation.navigate('ManagePosts')}
+                        >
+                            <MaterialCommunityIcons name="clipboard-text-outline" size={24} color={COLORS.primary} />
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={styles.manageTitle}>Manage My Postings</Text>
+                                <Text style={styles.manageSub}>View and edit your live listings</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.textSecondary} />
+                        </TouchableOpacity>
+                    </View>
                 )}
 
                 {/* Logout Button */}
@@ -375,6 +404,21 @@ const styles = StyleSheet.create({
         color: COLORS.error,
         fontWeight: '700',
         marginLeft: SPACING.sm,
+    },
+    manageBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: SPACING.sm,
+    },
+    manageTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.text,
+    },
+    manageSub: {
+        fontSize: 13,
+        color: COLORS.textSecondary,
+        marginTop: 2,
     },
     managePostsButton: {
         flexDirection: 'row',
