@@ -3,21 +3,46 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Keyboard
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/theme';
+import { supabase } from '../../supabase/supabaseClient';
+import { chatService, ChatMessage } from '../../services/chatService';
+import { useAuth } from '../../context/AuthContext';
 
 export const ChatRoomScreen = ({ route, navigation }: any) => {
-    // Expected to receive chatId and name from route params
+    const { user } = useAuth();
     const { chatId, name } = route.params || { chatId: '1', name: 'Unknown' };
-    const [messages, setMessages] = useState([
-        { id: '1', text: 'Hi! Is the room still available?', sender: 'me', time: '10:00 AM' },
-        { id: '2', text: 'Yes, it is!', sender: 'them', time: '10:05 AM' }
-    ]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
 
-    const sendMessage = () => {
-        if (!inputText.trim()) return;
-        setMessages([...messages, { id: Date.now().toString(), text: inputText, sender: 'me', time: 'Now' }]);
+    React.useEffect(() => {
+        // Initial Fetch
+        supabase.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true })
+            .then(({ data }) => setMessages(data as any || []));
+
+        // Realtime Websocket Subscription
+        const channel = supabase.channel(`room_${chatId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, 
+            payload => {
+                setMessages(prev => {
+                    const isDup = prev.some(m => m.id === payload.new.id);
+                    return isDup ? prev : [...prev, payload.new as any];
+                });
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); }
+    }, [chatId]);
+
+    const sendMessage = async () => {
+        if (!inputText.trim() || !user) return;
+        const tempText = inputText;
         setInputText('');
-        // In a real app, this triggers supabase.from('messages').insert(...)
+        
+        // Optimistic UI update
+        const tempMsg: ChatMessage = { id: Date.now().toString(), chat_id: chatId, sender_id: user.id, text: tempText, created_at: new Date().toISOString() };
+        setMessages(prev => [...prev, tempMsg]);
+
+        // Send to backend
+        await chatService.sendMessage(chatId, user.id, tempText);
     };
 
     return (
@@ -38,9 +63,11 @@ export const ChatRoomScreen = ({ route, navigation }: any) => {
                     keyExtractor={item => item.id}
                     contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
                     renderItem={({ item }) => (
-                        <View style={[styles.bubble, item.sender === 'me' ? styles.bubbleMe : styles.bubbleThem]}>
-                            <Text style={[styles.bubbleText, item.sender === 'me' && styles.bubbleTextMe]}>{item.text}</Text>
-                            <Text style={[styles.timeText, item.sender === 'me' && styles.timeTextMe]}>{item.time}</Text>
+                        <View style={[styles.bubble, item.sender_id === user?.id ? styles.bubbleMe : styles.bubbleThem]}>
+                            <Text style={[styles.bubbleText, item.sender_id === user?.id && styles.bubbleTextMe]}>{item.text}</Text>
+                            <Text style={[styles.timeText, item.sender_id === user?.id && styles.timeTextMe]}>
+                                {new Date(item.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </Text>
                         </View>
                     )}
                 />

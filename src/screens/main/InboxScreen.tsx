@@ -4,45 +4,53 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/theme';
 import { MainTabScreenProps } from '../../types';
-
-// Mock data until Supabase realtime table is populated
-const MOCK_CHATS = [
-    { id: '1', name: 'Ramesh (Employer)', lastMessage: 'Can you start from Monday?', time: '10:30 AM', unread: 2 },
-    { id: '2', name: 'Phase 1 Landlord', lastMessage: 'Yes, water is 24/7.', time: 'Yesterday', unread: 0 },
-];
+import { chatService, ChatSession } from '../../services/chatService';
+import { useAuth } from '../../context/AuthContext';
 
 export const InboxScreen: React.FC<MainTabScreenProps<'Inbox'>> = ({ navigation }) => {
+    const { user } = useAuth();
+    const [sessions, setSessions] = React.useState<ChatSession[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (!user) return;
+        chatService.getInboxSessions(user.id).then(data => {
+            setSessions(data);
+            setLoading(false);
+        });
+    }, [user]);
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Messages</Text>
             </View>
 
-            {MOCK_CHATS.length === 0 ? (
+            {loading ? null : sessions.length === 0 ? (
                 <View style={styles.empty}>
                     <MaterialCommunityIcons name="chat-sleep-outline" size={64} color="#CBD5E1" />
                     <Text style={styles.emptyText}>No messages yet</Text>
                 </View>
             ) : (
                 <FlatList
-                    data={MOCK_CHATS}
+                    data={sessions}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => (
                         <TouchableOpacity 
                             style={styles.chatRow} 
-                            onPress={() => (navigation as any).navigate('ChatRoom', { chatId: item.id, name: item.name })}
+                            onPress={() => (navigation as any).navigate('ChatRoom', { chatId: item.id, name: item.other_user?.name })}
                         >
                             <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>{item.name[0]}</Text>
+                                <Text style={styles.avatarText}>{item.other_user?.name?.[0] || 'U'}</Text>
                             </View>
                             <View style={styles.chatInfo}>
                                 <View style={styles.titleRow}>
-                                    <Text style={[styles.name, item.unread > 0 && styles.unreadName]}>{item.name}</Text>
-                                    <Text style={[styles.time, item.unread > 0 && styles.unreadTime]}>{item.time}</Text>
+                                    <Text style={[styles.name, (item.unread || 0) > 0 && styles.unreadName]}>{item.other_user?.name}</Text>
+                                    <Text style={[styles.time, (item.unread || 0) > 0 && styles.unreadTime]}>{new Date(item.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</Text>
                                 </View>
-                                <Text style={styles.lastMessage} numberOfLines={1}>{item.lastMessage}</Text>
+                                <Text style={styles.lastMessage} numberOfLines={1}>{item.last_message}</Text>
                             </View>
-                            {item.unread > 0 && (
+                            {(item.unread || 0) > 0 && (
                                 <View style={styles.badge}>
                                     <Text style={styles.badgeText}>{item.unread}</Text>
                                 </View>

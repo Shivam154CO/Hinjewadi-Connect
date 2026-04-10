@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { UserProfile, UserRole, ListingCategory } from '../types';
 import { supabase } from '../supabase/supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { notificationService } from '../services/notificationService';
 
 interface AuthContextType {
     user: UserProfile | null;
@@ -26,6 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [name, setName] = useState<string>('');
+
+    const captureAndSavePushToken = async (userId: string) => {
+        const token = await notificationService.registerForPushNotificationsAsync();
+        if (token) {
+            await supabase.from('users').update({ push_token: token }).eq('id', userId);
+        }
+    };
 
     useEffect(() => {
         const loadSession = async () => {
@@ -107,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 
                 // Store locally for autologin
                 await AsyncStorage.setItem('user_id', data.id);
+                captureAndSavePushToken(data.id);
                 return true; // Already registered
             } else {
                 // User doesn't exist
@@ -241,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             setUser(userProfile);
             await AsyncStorage.setItem('user_id', newId);
+            captureAndSavePushToken(newId);
         } catch (error: any) {
             console.error('Error creating profile DETAILS:', error?.message || error || 'Unknown Error');
             throw error;
