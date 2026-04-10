@@ -39,6 +39,7 @@ export type MainStackParamList = {
     CreateJobProfile: undefined;
     ManagePosts: undefined;
     HelpSupport: undefined;
+    Legal: undefined;
 };
 
 export type MainTabParamList = {

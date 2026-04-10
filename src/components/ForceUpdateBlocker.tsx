@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../theme/theme';
+import { COLORS, SHADOWS } from '../theme/theme';
 
 interface Props {
     latestVersion?: string;
@@ -39,6 +39,6 @@ const styles = StyleSheet.create({
     icon: { marginBottom: 24 },
     title: { fontSize: 26, fontWeight: '900', color: '#1E293B', marginBottom: 12, textAlign: 'center' },
     subtitle: { fontSize: 16, color: '#64748B', textAlign: 'center', marginBottom: 32, lineHeight: 24, paddingHorizontal: 20 },
-    button: { backgroundColor: '#10B981', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 16, ...COLORS.shadow },
+    button: { backgroundColor: '#10B981', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 16, ...SHADOWS.medium },
     buttonText: { color: "#FFF", fontSize: 16, fontWeight: '800' }
 });

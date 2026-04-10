@@ -254,6 +254,14 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                     />
                     
                     <ActionRow
+                        icon="shield-check"
+                        title="Legal & Privacy"
+                        subtitle="Terms of Service"
+                        onPress={() => (navigation as any).navigate('Legal')}
+                        color="#4F46E5"
+                    />
+                    
+                    <ActionRow
                         icon="help-circle"
                         title={t('help_support')}
                         subtitle="Common issues & contact"

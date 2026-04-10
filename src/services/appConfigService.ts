@@ -10,6 +10,7 @@ export interface AppConfig {
         visible: boolean;
     };
     maintenanceMode: boolean;
+    minAppVersion: string;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -21,7 +22,8 @@ const DEFAULT_CONFIG: AppConfig = {
         buttonText: 'Upgrade Profile',
         visible: true
     },
-    maintenanceMode: false
+    maintenanceMode: false,
+    minAppVersion: '1.0.0'
 };
 
 export const appConfigService = {
@@ -38,7 +40,8 @@ export const appConfigService = {
                 jobCategories: data.job_categories || DEFAULT_CONFIG.jobCategories,
                 serviceCategories: data.service_categories || DEFAULT_CONFIG.serviceCategories,
                 promoBanner: data.promo_banner || DEFAULT_CONFIG.promoBanner,
-                maintenanceMode: data.maintenance_mode || DEFAULT_CONFIG.maintenanceMode
+                maintenanceMode: data.maintenance_mode || DEFAULT_CONFIG.maintenanceMode,
+                minAppVersion: data.min_app_version || DEFAULT_CONFIG.minAppVersion
             };
         } catch (error) {
             console.warn('Could not fetch remote app config, using fallback defaults', error);

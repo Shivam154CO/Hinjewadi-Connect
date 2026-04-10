@@ -18,9 +18,11 @@ import {
     Outfit_800ExtraBold 
 } from '@expo-google-fonts/outfit';
 import * as SplashScreen from 'expo-splash-screen';
+import Constants from 'expo-constants';
 import './src/utils/i18n';
 import { NetworkBanner } from './src/components/NetworkBanner';
 import { MaintenanceBlocker } from './src/components/MaintenanceBlocker';
+import { ForceUpdateBlocker } from './src/components/ForceUpdateBlocker';
 import { appConfigService } from './src/services/appConfigService';
 
 SplashScreen.preventAutoHideAsync();
@@ -36,10 +38,18 @@ export default function App() {
     });
     
     const [maintenance, setMaintenance] = React.useState(false);
+    const [needsUpdate, setNeedsUpdate] = React.useState(false);
+    const [latestVer, setLatestVer] = React.useState('1.0.0');
 
     React.useEffect(() => {
         appConfigService.getConfig().then(config => {
             if (config.maintenanceMode) setMaintenance(true);
+            
+            const currentVer = Constants.expoConfig?.version || '1.0.0';
+            if (config.minAppVersion && config.minAppVersion.localeCompare(currentVer, undefined, { numeric: true, sensitivity: 'base' }) > 0) {
+                setNeedsUpdate(true);
+                setLatestVer(config.minAppVersion);
+            }
         });
         
         if (fontsLoaded) {
@@ -53,6 +63,14 @@ export default function App() {
         return (
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <MaintenanceBlocker />
+            </GestureHandlerRootView>
+        );
+    }
+
+    if (needsUpdate) {
+        return (
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <ForceUpdateBlocker latestVersion={latestVer} />
             </GestureHandlerRootView>
         );
     }
