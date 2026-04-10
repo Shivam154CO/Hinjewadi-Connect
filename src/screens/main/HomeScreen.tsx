@@ -7,6 +7,8 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { roomService } from '../../services/roomService';
 import { jobService } from '../../services/jobService';
+import { appConfigService, AppConfig } from '../../services/appConfigService';
+import { CategoryItem, FeaturedCard, JobMiniCard, ActionCard, BigActionBtn, StatCard } from '../../components/HomeComponents';
 
 import { useTranslation } from 'react-i18next';
 import { AIInsights } from '../../components/AIInsights';
@@ -16,6 +18,7 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const { user } = useAuth();
     const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
     const [recentJobs, setRecentJobs] = useState<Job[]>([]);
+    const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -28,12 +31,14 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            const [rooms, jobs] = await Promise.all([
+            const [rooms, jobs, config] = await Promise.all([
                 roomService.getRooms(5),
-                jobService.getJobs(5)
+                jobService.getJobs(5),
+                appConfigService.getConfig()
             ]);
             setFeaturedRooms(rooms);
             setRecentJobs(jobs);
+            setAppConfig(config);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -112,16 +117,18 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
                 </View>
             )}
 
-            <View style={styles.promoBanner}>
-                <View style={styles.promoText}>
-                    <Text style={styles.promoTitle}>Going Professional?</Text>
-                    <Text style={styles.promoSubtitle}>List yourself as a Worker to get noticed by local employers.</Text>
-                    <TouchableOpacity style={styles.promoBtn} onPress={() => navigation.navigate('Profile')}>
-                        <Text style={styles.promoBtnText}>Upgrade Profile</Text>
-                    </TouchableOpacity>
+            {appConfig?.promoBanner?.visible && (
+                <View style={styles.promoBanner}>
+                    <View style={styles.promoText}>
+                        <Text style={styles.promoTitle}>{appConfig.promoBanner.title}</Text>
+                        <Text style={styles.promoSubtitle}>{appConfig.promoBanner.subtitle}</Text>
+                        <TouchableOpacity style={styles.promoBtn} onPress={() => navigation.navigate('Profile')}>
+                            <Text style={styles.promoBtnText}>{appConfig.promoBanner.buttonText}</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.white} style={styles.promoIcon} />
                 </View>
-                <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.white} style={styles.promoIcon} />
-            </View>
+            )}
         </View>
     );
 
@@ -205,70 +212,7 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     );
 };
 
-const CategoryItem = ({ title, icon, color, onPress }: any) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={onPress}>
-        <View style={[styles.categoryIcon, { backgroundColor: color + '10' }]}>
-            <MaterialCommunityIcons name={icon} size={28} color={color} />
-        </View>
-        <Text style={styles.categoryTitle}>{title}</Text>
-    </TouchableOpacity>
-);
 
-const FeaturedCard = ({ title, price, area, onPress }: any) => (
-    <TouchableOpacity style={styles.featuredCard} onPress={onPress}>
-        <View style={styles.cardImagePlaceholder}>
-            <MaterialCommunityIcons name="home-city-outline" size={40} color={COLORS.border} />
-        </View>
-        <View style={styles.cardContent}>
-            <Text style={styles.cardTitle} numberOfLines={1}>{title}</Text>
-            <View style={styles.cardFooter}>
-                <Text style={styles.cardPrice}>{price}</Text>
-                <Text style={styles.cardArea}>{area}</Text>
-            </View>
-        </View>
-    </TouchableOpacity>
-);
-
-const JobMiniCard = ({ title, company, salary, onPress }: any) => (
-    <TouchableOpacity style={styles.jobMiniCard} onPress={onPress}>
-        <View style={styles.jobIcon}>
-            <MaterialCommunityIcons name="briefcase-outline" size={24} color={COLORS.primary} />
-        </View>
-        <Text style={styles.jobTitle} numberOfLines={1}>{title}</Text>
-        <Text style={styles.jobCompany} numberOfLines={1}>{company}</Text>
-        <Text style={styles.jobSalary}>{salary}</Text>
-    </TouchableOpacity>
-);
-
-const ActionCard = ({ title, subtitle, icon, color, onPress }: any) => (
-    <TouchableOpacity style={styles.actionCard} onPress={onPress}>
-        <View style={[styles.actionIcon, { backgroundColor: color + '10' }]}>
-            <MaterialCommunityIcons name={icon} size={24} color={color} />
-        </View>
-        <View style={{ flex: 1, marginLeft: 16 }}>
-            <Text style={styles.actionCardTitle}>{title}</Text>
-            <Text style={styles.actionCardSubtitle}>{subtitle}</Text>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color={COLORS.border} />
-    </TouchableOpacity>
-);
-
-const BigActionBtn = ({ title, icon, color, onPress }: any) => (
-    <TouchableOpacity style={[styles.bigActionBtn, { backgroundColor: color }]} onPress={onPress}>
-        <MaterialCommunityIcons name={icon} size={32} color={COLORS.white} />
-        <Text style={styles.bigActionBtnText}>{title}</Text>
-    </TouchableOpacity>
-);
-
-const StatCard = ({ label, value, icon, color }: any) => (
-    <View style={styles.statCard}>
-        <MaterialCommunityIcons name={icon} size={22} color={color} />
-        <View style={{ marginLeft: 12 }}>
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
-        </View>
-    </View>
-);
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },

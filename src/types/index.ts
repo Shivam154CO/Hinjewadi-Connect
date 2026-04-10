@@ -81,7 +81,7 @@ export interface Room {
     leadsCount?: number;
 }
 
-export type JobCategory = 'Peon' | 'Guard' | 'Office Boy' | 'Watchman' | 'Helper' | 'Security' | 'Driver' | 'Cook';
+export type JobCategory = string;
 
 export interface Job {
     id: string;
@@ -117,7 +117,7 @@ export interface JobSeekerProfile {
     createdAt: string;
 }
 
-export type ServiceCategory = 'Maid' | 'Cook' | 'Cleaner' | 'Laundry' | 'Driver';
+export type ServiceCategory = string;
 
 export interface ServiceProvider {
     id: string;
