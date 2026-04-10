@@ -257,7 +257,7 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                         icon="help-circle"
                         title={t('help_support')}
                         subtitle="Common issues & contact"
-                        onPress={() => {}}
+                        onPress={() => (navigation as any).navigate('HelpSupport')}
                         color="#64748B"
                     />
                 </View>

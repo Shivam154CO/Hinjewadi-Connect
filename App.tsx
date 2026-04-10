@@ -19,6 +19,9 @@ import {
 } from '@expo-google-fonts/outfit';
 import * as SplashScreen from 'expo-splash-screen';
 import './src/utils/i18n';
+import { NetworkBanner } from './src/components/NetworkBanner';
+import { MaintenanceBlocker } from './src/components/MaintenanceBlocker';
+import { appConfigService } from './src/services/appConfigService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,8 +34,14 @@ export default function App() {
         Outfit_700Bold,
         Outfit_800ExtraBold,
     });
+    
+    const [maintenance, setMaintenance] = React.useState(false);
 
     React.useEffect(() => {
+        appConfigService.getConfig().then(config => {
+            if (config.maintenanceMode) setMaintenance(true);
+        });
+        
         if (fontsLoaded) {
             SplashScreen.hideAsync();
         }
@@ -40,9 +49,18 @@ export default function App() {
 
     if (!fontsLoaded) return null;
 
+    if (maintenance) {
+        return (
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <MaintenanceBlocker />
+            </GestureHandlerRootView>
+        );
+    }
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <ErrorBoundary>
+                <NetworkBanner />
                 <QueryProvider>
                     <SafeAreaProvider>
                         <AuthProvider>

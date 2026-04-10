@@ -9,6 +9,7 @@ export interface AppConfig {
         buttonText: string;
         visible: boolean;
     };
+    maintenanceMode: boolean;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -19,7 +20,8 @@ const DEFAULT_CONFIG: AppConfig = {
         subtitle: 'List yourself as a Worker to get noticed by local employers.',
         buttonText: 'Upgrade Profile',
         visible: true
-    }
+    },
+    maintenanceMode: false
 };
 
 export const appConfigService = {
@@ -35,7 +37,8 @@ export const appConfigService = {
             return {
                 jobCategories: data.job_categories || DEFAULT_CONFIG.jobCategories,
                 serviceCategories: data.service_categories || DEFAULT_CONFIG.serviceCategories,
-                promoBanner: data.promo_banner || DEFAULT_CONFIG.promoBanner
+                promoBanner: data.promo_banner || DEFAULT_CONFIG.promoBanner,
+                maintenanceMode: data.maintenance_mode || DEFAULT_CONFIG.maintenanceMode
             };
         } catch (error) {
             console.warn('Could not fetch remote app config, using fallback defaults', error);
