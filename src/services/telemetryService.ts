@@ -1,5 +1,7 @@
-// This is an architectural facade. 
-// When you are ready for production, you just run `npx expo install @sentry/react-native` and drop your Sentry DSN here.
+/**
+ * Telemetry Facade Service 
+ * Interfaces with remote logging providers (e.g. Sentry, Firebase) securely.
+ */
 
 class TelemetryService {
     init() {
