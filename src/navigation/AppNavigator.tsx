@@ -5,6 +5,20 @@ import { MainStack } from './MainStack';
 import { useAuth } from '../context/AuthContext';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../theme/theme';
+import * as Linking from 'expo-linking';
+
+const prefix = Linking.createURL('/');
+const linking = {
+    prefixes: [prefix, 'hinjewadiconnect://', 'https://hinjewadiconnect.com'],
+    config: {
+        screens: {
+            MainTabs: { screens: { Home: 'home', Jobs: 'jobs', Rooms: 'rooms', Services: 'services', Inbox: 'inbox', Profile: 'me' } },
+            RoomDetail: 'room/:roomId',
+            JobDetail: 'job/:jobId',
+            ChatRoom: 'chat/:chatId'
+        }
+    }
+};
 
 export const AppNavigator = () => {
     const { user, isLoading } = useAuth();
@@ -18,7 +32,7 @@ export const AppNavigator = () => {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer linking={linking as any}>
             {user ? <MainStack /> : <AuthNavigator />}
         </NavigationContainer>
     );

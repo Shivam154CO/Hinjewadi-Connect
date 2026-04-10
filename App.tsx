@@ -24,6 +24,8 @@ import { NetworkBanner } from './src/components/NetworkBanner';
 import { MaintenanceBlocker } from './src/components/MaintenanceBlocker';
 import { ForceUpdateBlocker } from './src/components/ForceUpdateBlocker';
 import { appConfigService } from './src/services/appConfigService';
+import { telemetryService } from './src/services/telemetryService';
+import { notificationService } from './src/services/notificationService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +44,11 @@ export default function App() {
     const [latestVer, setLatestVer] = React.useState('1.0.0');
 
     React.useEffect(() => {
+        telemetryService.init();
+        notificationService.registerForPushNotificationsAsync().then(token => {
+            if (token) telemetryService.logEvent('PushToken_Registered', { token });
+        });
+
         appConfigService.getConfig().then(config => {
             if (config.maintenanceMode) setMaintenance(true);
             

@@ -40,6 +40,7 @@ export type MainStackParamList = {
     ManagePosts: undefined;
     HelpSupport: undefined;
     Legal: undefined;
+    ChatRoom: { chatId: string, name: string };
 };
 
 export type MainTabParamList = {
@@ -47,6 +48,7 @@ export type MainTabParamList = {
     Rooms: undefined;
     Jobs: undefined;
     Services: undefined;
+    Inbox: undefined;
     Profile: undefined;
 };
 

@@ -11,6 +11,7 @@ import CreateJobProfileScreen from '../screens/main/CreateJobProfileScreen';
 import { ManagePostsScreen } from '../screens/main/ManagePostsScreen';
 import { HelpSupportScreen } from '../screens/main/HelpSupportScreen';
 import { LegalScreen } from '../screens/main/LegalScreen';
+import { ChatRoomScreen } from '../screens/main/ChatRoomScreen';
 import { COLORS } from '../theme/theme';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -33,6 +34,7 @@ export const MainStack = () => {
             <Stack.Screen name="ManagePosts" component={ManagePostsScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             <Stack.Screen name="Legal" component={LegalScreen} />
+            <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />
         </Stack.Navigator>
     );
 };
