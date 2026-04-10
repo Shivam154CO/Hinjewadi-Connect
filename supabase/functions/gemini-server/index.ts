@@ -1,3 +1,5 @@
+// @ts-nocheck
+// This file runs strictly on Supabase Deno Edge functions, not React Native
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
