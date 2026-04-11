@@ -32,10 +32,17 @@ export const MainNavigator = () => {
                     return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
                 },
                 tabBarStyle: {
+                    backgroundColor: '#FFFFFF',
                     borderTopWidth: 1,
-                    borderTopColor: COLORS.border,
-                    height: 60,
-                    paddingBottom: 10,
+                    borderTopColor: '#F3F4F6',
+                    height: 64,
+                    paddingBottom: 8,
+                    paddingTop: 6,
+                    elevation: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
                 }
             })}
         >

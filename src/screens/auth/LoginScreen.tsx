@@ -5,30 +5,29 @@ import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps } from '../../types';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
+import { COLORS, SPACING, FONTS } from '../../theme/theme';
 import { errorHandler } from '../../utils/errorHandler';
 import { useTranslation } from 'react-i18next';
+
+const LANGS = [
+    { code: 'en', label: 'EN' },
+    { code: 'hi', label: 'HI' },
+    { code: 'mr', label: 'MR' },
+];
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
     const { t, i18n } = useTranslation();
     const [name, setName] = useState('');
     const { login, isProcessing } = useAuth();
 
-    const changeLanguage = (lng: string) => {
-        i18n.changeLanguage(lng);
-    };
-
     const handleContinue = async () => {
         if (!name.trim()) {
             errorHandler.handleValidationError('Name', 'Please enter your name to continue');
             return;
         }
-        
         try {
             const isRegistered = await login(name.trim());
-            if (!isRegistered) {
-                navigation.navigate('RoleSelection');
-            }
+            if (!isRegistered) navigation.navigate('RoleSelection');
         } catch (err: any) {
             errorHandler.handleAuthError(err);
         }
@@ -36,40 +35,46 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.langSelector}>
-                {['en', 'hi', 'mr'].map((lang) => (
+            {/* Language selector */}
+            <View style={styles.langRow}>
+                {LANGS.map((lang) => (
                     <TouchableOpacity
-                        key={lang}
-                        onPress={() => changeLanguage(lang)}
-                        style={[
-                            styles.langBtn,
-                            i18n.language === lang && styles.langBtnActive
-                        ]}
+                        key={lang.code}
+                        onPress={() => i18n.changeLanguage(lang.code)}
+                        style={[styles.langBtn, i18n.language === lang.code && styles.langBtnActive]}
                     >
-                        <Text style={[
-                            styles.langText,
-                            i18n.language === lang && styles.langTextActive
-                        ]}>{lang.toUpperCase()}</Text>
+                        <Text style={[styles.langText, i18n.language === lang.code && styles.langTextActive]}>
+                            {lang.label}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
+
             <View style={styles.inner}>
+                {/* Wordmark */}
+                <View style={styles.wordmark}>
+                    <Text style={styles.wordmarkText}>Hinjewadi</Text>
+                    <Text style={styles.wordmarkSub}>Connect</Text>
+                </View>
+
                 <Text style={styles.title}>{t('welcome')}</Text>
                 <Text style={styles.subtitle}>{t('login_subtitle')}</Text>
-                
+
                 <AppTextInput
                     label={t('name')}
                     placeholder={t('name_placeholder')}
                     value={name}
                     onChangeText={setName}
                 />
-                
+
                 <PrimaryButton
                     title={t('continue')}
                     onPress={handleContinue}
                     loading={isProcessing}
                     style={styles.button}
                 />
+
+                <Text style={styles.hint}>Your name is your identity on this platform</Text>
             </View>
         </SafeAreaView>
     );
@@ -78,62 +83,48 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: COLORS.background 
-    },
-    langSelector: {
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    langRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        padding: SPACING.md,
-        gap: SPACING.sm,
+        paddingHorizontal: SPACING.md,
+        paddingTop: SPACING.sm,
+        gap: 6,
     },
     langBtn: {
-        paddingHorizontal: SPACING.md,
-        paddingVertical: 6,
-        borderRadius: BORDER_RADIUS.full,
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-        backgroundColor: COLORS.white,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
-    langBtnActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-        ...SHADOWS.soft,
-    },
-    langText: {
-        fontSize: 12,
-        fontFamily: FONTS.bold,
-        color: COLORS.textSecondary,
-    },
-    langTextActive: {
-        color: COLORS.white,
-    },
-    inner: { 
-        padding: SPACING.xl, 
-        flex: 1, 
-        justifyContent: 'center' 
-    },
+    langBtnActive: { backgroundColor: COLORS.text, borderColor: COLORS.text },
+    langText: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary },
+    langTextActive: { color: '#FFFFFF' },
+
+    inner: { flex: 1, paddingHorizontal: SPACING.xl, justifyContent: 'center' },
+
+    wordmark: { marginBottom: SPACING.xl },
+    wordmarkText: { fontSize: 32, fontWeight: '900', color: COLORS.text, letterSpacing: -1.5 },
+    wordmarkSub: { fontSize: 14, fontWeight: '500', color: COLORS.textSecondary, marginTop: -4 },
+
     title: {
-        fontSize: 36,
-        fontFamily: FONTS.title,
+        fontSize: 22,
+        fontFamily: FONTS.heading,
         color: COLORS.text,
-        marginBottom: SPACING.xs,
-        letterSpacing: -1,
+        marginBottom: 6,
     },
     subtitle: {
-        fontSize: 18,
-        fontFamily: FONTS.subHeading,
+        fontSize: 15,
         color: COLORS.textSecondary,
-        marginBottom: SPACING.xxxl,
-        lineHeight: 28,
+        marginBottom: SPACING.xl,
+        lineHeight: 22,
     },
-    button: { 
-        marginTop: SPACING.xl,
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 10,
+    button: { marginTop: SPACING.lg },
+    hint: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        textAlign: 'center',
+        marginTop: SPACING.md,
     },
 });

@@ -78,11 +78,16 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color="#1E293B" />
+                    <MaterialCommunityIcons name="arrow-left" size={22} color="#111827" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Premium Living</Text>
-                <TouchableOpacity style={styles.iconBtn}>
-                    <MaterialCommunityIcons name="map-search-outline" size={24} color={COLORS.primary} />
+                <View style={styles.headerCenter}>
+                    <View style={styles.headerLocation}>
+                        <MaterialCommunityIcons name="map-marker" size={14} color={COLORS.primary} />
+                        <Text style={styles.headerTitle}>{user?.area || 'Hinjewadi'}</Text>
+                    </View>
+                </View>
+                <TouchableOpacity style={styles.filterIconBtn}>
+                    <MaterialCommunityIcons name="tune-variant" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
             </View>
 
@@ -112,19 +117,9 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                             style={[styles.catChip, selectedCategory === cat.key && styles.catChipActive]}
                             onPress={() => setSelectedCategory(cat.key)}
                         >
-                            <MaterialCommunityIcons
-                                name={cat.icon as any}
-                                size={18}
-                                color={selectedCategory === cat.key ? '#FFFFFF' : '#64748B'}
-                            />
                             <Text style={[styles.catLabel, selectedCategory === cat.key && styles.catLabelActive]}>
                                 {cat.label}
                             </Text>
-                            <View style={[styles.countBadge, selectedCategory === cat.key && styles.countBadgeActive]}>
-                                <Text style={[styles.countText, selectedCategory === cat.key && styles.countTextActive]}>
-                                    {getCategoryCount(cat.key)}
-                                </Text>
-                            </View>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -160,6 +155,9 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                     )}
                 </View>
             </View>
+
+            {/* Result count */}
+            {!loading && <Text style={styles.resultCount}>Found {sortedRooms.length} listings for you</Text>}
 
             {loading && !refreshing ? (
                 <View style={styles.loaderContainer}>
@@ -213,84 +211,92 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
     iconBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: '#F8FAFC',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 40, height: 40, borderRadius: 10,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center', justifyContent: 'center',
     },
-    headerTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B', letterSpacing: -0.5 },
-    searchSection: { paddingHorizontal: 20, marginBottom: 16 },
+    headerCenter: { flex: 1, alignItems: 'center' },
+    headerLocation: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+    },
+    headerTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
+    filterIconBtn: {
+        width: 40, height: 40, borderRadius: 10,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center', justifyContent: 'center',
+    },
+
+    searchSection: { paddingHorizontal: 16, marginBottom: 12 },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F1F5F9',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        height: 54,
-    },
-    searchInput: { flex: 1, marginLeft: 12, fontSize: 15, color: '#1E293B', fontWeight: '600' },
-    filterSection: { marginBottom: 12 },
-    categoryScroll: { paddingLeft: 20, paddingBottom: 16, gap: 10 },
-    catChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        paddingLeft: 12,
-        paddingRight: 8,
-        paddingVertical: 8,
-        borderRadius: 14,
-        borderWidth: 1.5,
-        borderColor: '#F1F5F9',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        height: 46,
         gap: 8,
     },
-    catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-    catLabel: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-    catLabelActive: { color: '#FFFFFF' },
-    countBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-    countBadgeActive: { backgroundColor: 'rgba(255,255,255,0.2)' },
-    countText: { fontSize: 10, fontWeight: '800', color: '#94A3B8' },
-    countTextActive: { color: '#FFFFFF' },
-    sortRow: { paddingHorizontal: 20, gap: 12 },
+    searchInput: { flex: 1, fontSize: 14, color: '#111827' },
+
+    // Underline tab style (Image 1)
+    filterSection: { borderBottomWidth: 1, borderBottomColor: '#E5E7EB', marginBottom: 8 },
+    categoryScroll: { paddingLeft: 16, gap: 0 },
+    catChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 2.5,
+        borderBottomColor: 'transparent',
+    },
+    catChipActive: {
+        borderBottomColor: COLORS.primary,
+    },
+    catLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
+    catLabelActive: { color: COLORS.primary, fontWeight: '700' },
+
+    // Unused but kept for type safety
+    countBadge: {},
+    countBadgeActive: {},
+    countText: {},
+    countTextActive: {},
+
+    sortRow: { paddingHorizontal: 16, paddingBottom: 8, gap: 8 },
     sortToggleContainer: {
         flexDirection: 'row',
-        backgroundColor: '#F1F5F9',
-        borderRadius: 12,
-        padding: 4,
-        width: 200,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+        padding: 3,
+        alignSelf: 'flex-start',
     },
-    sortSide: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10 },
+    sortSide: { paddingVertical: 6, paddingHorizontal: 16, alignItems: 'center', borderRadius: 6 },
     sortSideActive: { backgroundColor: '#FFFFFF', ...SHADOWS.light },
-    sortSideText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-    sortSideTextActive: { color: COLORS.primary },
+    sortSideText: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+    sortSideTextActive: { color: COLORS.primary, fontWeight: '700' },
     phaseScroll: { gap: 8 },
-    phaseChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
-    phaseChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '05' },
-    phaseText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
-    phaseTextActive: { color: COLORS.primary },
+    phaseChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 8, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
+    phaseChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '10' },
+    phaseText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+    phaseTextActive: { color: COLORS.primary, fontWeight: '700' },
+
+    resultCount: { fontSize: 12, color: '#6B7280', paddingHorizontal: 16, paddingBottom: 8 },
+
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 60 },
-    loaderText: { marginTop: 16, fontSize: 15, fontWeight: '600', color: '#64748B' },
-    listContent: { paddingHorizontal: 20, paddingBottom: 100 },
+    loaderText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
+    listContent: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 100 },
     emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 40 },
-    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', marginTop: 20 },
-    emptySubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center', marginTop: 8, lineHeight: 22 },
-    clearBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14, backgroundColor: COLORS.primary },
-    clearBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginTop: 20 },
+    emptySubtitle: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginTop: 6, lineHeight: 20 },
+    clearBtn: { marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, backgroundColor: COLORS.primary },
+    clearBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
     fab: {
-        position: 'absolute',
-        bottom: 30,
-        right: 20,
-        width: 64,
-        height: 64,
-        borderRadius: 22,
+        position: 'absolute', bottom: 24, right: 16,
+        width: 56, height: 56, borderRadius: 14,
         backgroundColor: COLORS.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'center', justifyContent: 'center',
         ...SHADOWS.medium,
     },
 });
+

@@ -64,10 +64,10 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
 
             {/* Category Grid - Dynamic & Clean */}
             <View style={styles.categoryGrid}>
-                <CategoryItem title={t('rooms')} icon="home-variant" color="#4F46E5" onPress={() => navigation.navigate('Rooms')} />
-                <CategoryItem title={t('jobs')} icon="briefcase" color="#10B981" onPress={() => navigation.navigate('Jobs')} />
-                <CategoryItem title={t('services')} icon="account-group" color="#F59E0B" onPress={() => navigation.navigate('Services')} />
-                <CategoryItem title={t('post')} icon="plus-thick" color="#8B5CF6" onPress={() => navigation.navigate('PostListing')} />
+                <CategoryItem title={t('rooms')} icon="home-variant" onPress={() => navigation.navigate('Rooms')} />
+                <CategoryItem title={t('jobs')} icon="briefcase" onPress={() => navigation.navigate('Jobs')} />
+                <CategoryItem title={t('services')} icon="account-group" onPress={() => navigation.navigate('Services')} />
+                <CategoryItem title={t('post')} icon="plus-thick" onPress={() => navigation.navigate('PostListing')} />
             </View>
 
             {/* Live Rooms Section */}
@@ -145,8 +145,8 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             </View>
 
             <View style={styles.actionGrid}>
-                <BigActionBtn title="Post New Listing" icon="plus-circle" color={COLORS.primary} onPress={() => navigation.navigate('PostListing')} />
-                <BigActionBtn title="View My Posts" icon="clipboard-list" color={COLORS.secondary} onPress={() => navigation.navigate('ManagePosts')} />
+                <BigActionBtn title="Post New Listing" icon="plus-circle" onPress={() => navigation.navigate('PostListing')} />
+                <BigActionBtn title="View My Posts" icon="clipboard-list" onPress={() => navigation.navigate('ManagePosts')} />
             </View>
         </View>
     );
@@ -169,8 +169,8 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             </View>
 
             <View style={styles.quickActions}>
-                <ActionCard title="Find Jobs" subtitle="Browse local openings" icon="magnify" color={COLORS.primary} onPress={() => navigation.navigate('Jobs')} />
-                <ActionCard title="Profile Stats" subtitle="See profile visits" icon="chart-line" color={COLORS.success} onPress={() => navigation.navigate('Profile')} />
+                <ActionCard title="Find Jobs" subtitle="Browse local openings" icon="magnify" onPress={() => navigation.navigate('Jobs')} />
+                <ActionCard title="My Profile" subtitle="See profile visits" icon="chart-line" onPress={() => navigation.navigate('Profile')} />
             </View>
         </View>
     );
@@ -192,13 +192,13 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             >
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.brandName}>Hinjewadi Connect</Text>
-                        <Text style={styles.locationText}>
-                            <MaterialCommunityIcons name="map-marker" size={12} color={COLORS.primary} /> {user?.area || 'All Phases'}, Pune
-                        </Text>
+                        <Text style={styles.brandName}>Hinjewadi</Text>
+                        <Text style={styles.locationText}>{user?.area || 'All Phases'} · Pune</Text>
                     </View>
                     <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Profile')}>
-                        <MaterialCommunityIcons name="account-circle-outline" size={32} color={COLORS.primary} />
+                        <View style={styles.profileAvatar}>
+                            <Text style={styles.profileAvatarChar}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
 
@@ -227,9 +227,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#F3F4F6',
     },
-    brandName: { fontSize: 24, fontWeight: '900', color: COLORS.text, letterSpacing: -1 },
-    locationText: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2, fontWeight: '600' },
+    brandName: { fontSize: 22, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
+    locationText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, fontWeight: '500' },
     profileBtn: { padding: 4 },
+    profileAvatar: {
+        width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6',
+        alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB',
+    },
+    profileAvatarChar: { fontSize: 15, fontWeight: '800', color: COLORS.text },
     dashboard: { padding: SPACING.lg },
     welcomeSection: { marginBottom: SPACING.xl },
     greeting: { fontSize: 28, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     jobCompany: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
     jobSalary: { fontSize: 14, fontWeight: '800', color: COLORS.primary, marginTop: 8 },
 
-    promoBanner: { backgroundColor: COLORS.primary, borderRadius: 24, padding: 24, flexDirection: 'row', overflow: 'hidden' },
+    promoBanner: { backgroundColor: COLORS.text, borderRadius: 20, padding: 24, flexDirection: 'row', overflow: 'hidden', marginBottom: 24 },
     promoText: { flex: 1, zIndex: 1 },
     promoTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
     promoSubtitle: { fontSize: 14, color: '#FFFFFFCC', marginTop: 8, lineHeight: 20 },

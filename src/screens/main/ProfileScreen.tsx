@@ -14,7 +14,6 @@ import { useAuth } from '../../context/AuthContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserRole, MainTabScreenProps } from '../../types';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { AIInsights } from '../../components/AIInsights';
 
@@ -68,27 +67,17 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
 
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={['#4F46E5', '#3730A3']}
-                style={styles.headerGradient}
-            >
-                <SafeAreaView edges={['top']}>
-                    <View style={styles.headerContent}>
-                        <View style={styles.avatarContainer}>
-                            <View style={styles.avatar}>
-                                <Text style={styles.avatarChar}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
-                            </View>
-                            <TouchableOpacity style={styles.editAvatarBtn}>
-                                <MaterialCommunityIcons name="camera" size={16} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.headerText}>
-                            <Text style={styles.userName}>{user?.name}</Text>
-                            <Text style={styles.userSub}>{user?.email || 'Hinjewadi Connect User'}</Text>
-                        </View>
+            <SafeAreaView edges={['top']} style={styles.headerBand}>
+                <View style={styles.headerContent}>
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarChar}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
                     </View>
-                </SafeAreaView>
-            </LinearGradient>
+                    <View style={styles.headerText}>
+                        <Text style={styles.userName} numberOfLines={1}>{user?.name}</Text>
+                        <Text style={styles.userSub} numberOfLines={1}>{user?.email || 'Hinjewadi Connect'}</Text>
+                    </View>
+                </View>
+            </SafeAreaView>
 
             <ScrollView 
                 style={styles.content}
@@ -321,22 +310,42 @@ const ActionRow = ({ icon, title, subtitle, onPress, color }: any) => (
 );
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8FAFC' },
-    headerGradient: { paddingBottom: 40, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
-    headerContent: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 16 },
-    avatarContainer: { position: 'relative' },
-    avatar: { width: 70, height: 70, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-    avatarChar: { fontSize: 28, fontWeight: '900', color: '#FFFFFF' },
-    editAvatarBtn: { position: 'absolute', bottom: -4, right: -4, backgroundColor: '#10B981', width: 26, height: 26, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#4F46E5' },
-    headerText: { marginLeft: 16, flex: 1 },
-    userName: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', letterSpacing: -0.5 },
-    userSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '600', marginTop: 2 },
-    content: { flex: 1, marginTop: -30 },
+    container: { flex: 1, backgroundColor: '#F9FAFB' },
+    headerBand: {
+        backgroundColor: '#FFFFFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 12,
+        gap: 12,
+    },
+    avatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        flexShrink: 0,
+    },
+    avatarChar: { fontSize: 20, fontWeight: '900', color: COLORS.text },
+    editAvatarBtn: { display: 'none' },
+    headerText: { flex: 1, minWidth: 0 },
+    userName: { fontSize: 17, fontWeight: '800', color: COLORS.text },
+    userSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+    content: { flex: 1 },
     scrollContent: { padding: 20, paddingBottom: 40 },
-    card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, ...SHADOWS.medium, marginBottom: 24 },
+    card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, ...SHADOWS.light, marginBottom: 16, borderWidth: 1, borderColor: '#E5E7EB' },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    cardTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
-    editAction: { fontSize: 14, fontWeight: '700', color: '#4F46E5' },
+    cardTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+    editAction: { fontSize: 14, fontWeight: '600', color: COLORS.accent },
     infoGrid: { flexDirection: 'row', gap: 16 },
     infoTile: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
     tileIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -355,10 +364,10 @@ const styles = StyleSheet.create({
     sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
     sectionSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
     roleGrid: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-    roleCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, alignItems: 'center', borderWidth: 2, borderColor: '#F1F5F9' },
-    roleIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-    roleLabel: { fontSize: 14, fontWeight: '800', color: '#1E293B' },
-    roleSub: { fontSize: 10, color: '#94A3B8', fontWeight: '600', marginTop: 2, textAlign: 'center' },
+    roleCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1.5, borderColor: '#E5E7EB' },
+    roleIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+    roleLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+    roleSub: { fontSize: 10, color: COLORS.textMuted, fontWeight: '500', marginTop: 2, textAlign: 'center' },
     languageContainer: { flexDirection: 'row', gap: 12, marginBottom: 30 },
     languageBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1.5, borderColor: '#F1F5F9' },
     languageBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },

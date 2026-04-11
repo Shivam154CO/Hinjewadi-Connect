@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Image,
-    Platform
-} from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../theme/theme';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { COLORS, SHADOWS } from '../theme/theme';
 import { Room } from '../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface RoomCardProps {
     room: Room;
@@ -24,269 +16,138 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, onPress }) => {
         <TouchableOpacity
             style={styles.card}
             onPress={() => onPress(room.id)}
-            activeOpacity={0.95}
+            activeOpacity={0.85}
         >
-            {/* Image Section */}
-            <View style={styles.imageContainer}>
+            {/* Image — left side */}
+            <View style={styles.imageWrap}>
                 {room.images && room.images.length > 0 ? (
                     <Image source={{ uri: room.images[0] }} style={styles.image} />
                 ) : (
                     <View style={styles.imagePlaceholder}>
-                        <MaterialCommunityIcons name="home-city" size={48} color="#CBD5E1" />
-                        <Text style={styles.placeholderText}>Photos coming soon</Text>
+                        <MaterialCommunityIcons name="home-city-outline" size={32} color="#D1D5DB" />
                     </View>
                 )}
-
-                {/* Overlays */}
-                <LinearGradient
-                    colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.6)']}
-                    style={StyleSheet.absoluteFill}
-                />
-
-                <View style={styles.badgeContainer}>
-                    <View style={styles.verifiedBadge}>
-                        <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
-                        <Text style={styles.verifiedText}>VERIFIED</Text>
-                    </View>
-                    <View style={[styles.typeBadge, { backgroundColor: room.type === 'PG' ? '#8B5CF6' : '#4F46E5' }]}>
-                        <Text style={styles.typeText}>{room.type}</Text>
-                    </View>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.heartButton}
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        setSaved(!saved);
-                    }}
-                >
-                    <MaterialCommunityIcons
-                        name={saved ? "heart" : "heart-outline"}
-                        size={22}
-                        color={saved ? '#FF4B4B' : '#FFFFFF'}
-                    />
-                </TouchableOpacity>
-
-                <View style={styles.priceOverlay}>
-                    <Text style={styles.priceSymbol}>₹</Text>
-                    <Text style={styles.priceAmount}>{room.price.toLocaleString()}</Text>
-                    <Text style={styles.priceUnit}>/mo</Text>
+                <View style={styles.typePill}>
+                    <Text style={styles.typeText}>{room.type}</Text>
                 </View>
             </View>
 
-            {/* Content Section */}
-            <View style={styles.content}>
-                <View style={styles.mainInfo}>
-                    <Text style={styles.title} numberOfLines={1}>{room.title}</Text>
-                    <View style={styles.locationRow}>
-                        <MaterialCommunityIcons name="map-marker" size={12} color={COLORS.primary} />
-                        <Text style={styles.locationText}>{room.area}, Pune</Text>
-                    </View>
+            {/* Details — right side */}
+            <View style={styles.details}>
+                <View style={styles.topRow}>
+                    <Text style={styles.title} numberOfLines={2}>{room.title}</Text>
+                    <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); setSaved(!saved); }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <MaterialCommunityIcons
+                            name={saved ? 'bookmark' : 'bookmark-outline'}
+                            size={20}
+                            color={saved ? COLORS.primary : '#D1D5DB'}
+                        />
+                    </TouchableOpacity>
                 </View>
 
-                <View style={styles.detailRow}>
-                    <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="chair-rolling" size={14} color={COLORS.textSecondary} />
-                        <Text style={styles.detailText}>{room.furnishing}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="account-group-outline" size={14} color={COLORS.textSecondary} />
-                        <Text style={styles.detailText}>{room.genderPreference === 'Any' ? 'Any' : room.genderPreference}</Text>
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.detailItem}>
-                        <MaterialCommunityIcons name="star" size={14} color="#F59E0B" />
-                        <Text style={styles.ratingText}>4.8</Text>
-                    </View>
+                <View style={styles.locationRow}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={12} color={COLORS.textMuted} />
+                    <Text style={styles.locationText}>{room.area}</Text>
                 </View>
 
-                <View style={styles.amenitiesContainer}>
-                    {room.amenities.slice(0, 3).map((amt, idx) => (
-                        <View key={idx} style={styles.amenityChip}>
-                            <Text style={styles.amenityText}>{amt}</Text>
-                        </View>
+                {/* Price */}
+                <Text style={styles.price}>
+                    ₹{room.price.toLocaleString()}
+                    <Text style={styles.priceUnit}> / Per Month</Text>
+                </Text>
+
+                {/* Rating row */}
+                <View style={styles.ratingRow}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <MaterialCommunityIcons
+                            key={i}
+                            name={i <= 4 ? 'star' : 'star-half-full'}
+                            size={12}
+                            color="#F59E0B"
+                        />
                     ))}
-                    {room.amenities.length > 3 && (
-                        <Text style={styles.moreAmenity}>+{room.amenities.length - 3}</Text>
-                    )}
+                    <Text style={styles.ratingText}>4.4</Text>
+                    <View style={styles.furnDot} />
+                    <Text style={styles.furnText}>{room.furnishing}</Text>
                 </View>
             </View>
         </TouchableOpacity>
     );
 };
 
+const COLORS_REF = COLORS;
+
 const styles = StyleSheet.create({
     card: {
+        flexDirection: 'row',
         backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        marginBottom: 20,
+        borderRadius: 12,
+        marginBottom: 14,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#F1F5F9',
-        ...SHADOWS.medium,
+        borderColor: '#E5E7EB',
+        ...SHADOWS.light,
     },
-    imageContainer: {
-        width: '100%',
-        height: 190,
+    imageWrap: {
+        width: 120,
+        height: 130,
         position: 'relative',
+        flexShrink: 0,
     },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
+    image: { width: '100%', height: '100%' },
     imagePlaceholder: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#F8FAFC',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: '100%', height: '100%', backgroundColor: '#F3F4F6',
+        alignItems: 'center', justifyContent: 'center',
     },
-    placeholderText: {
-        fontSize: 12,
-        color: '#94A3B8',
-        fontWeight: '600',
-        marginTop: 8,
+    typePill: {
+        position: 'absolute', bottom: 8, left: 8,
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
     },
-    badgeContainer: {
-        position: 'absolute',
-        top: 14,
-        left: 14,
+    typeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
+
+    details: {
+        flex: 1,
+        padding: 12,
+        justifyContent: 'space-between',
+    },
+    topRow: {
         flexDirection: 'row',
-        gap: 8,
-    },
-    verifiedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#10B981',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        gap: 4,
-    },
-    verifiedText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '900',
-        letterSpacing: 0.5,
-    },
-    typeBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    typeText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '900',
-    },
-    heartButton: {
-        position: 'absolute',
-        top: 14,
-        right: 14,
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    priceOverlay: {
-        position: 'absolute',
-        bottom: 14,
-        left: 14,
-        flexDirection: 'row',
-        alignItems: 'baseline',
-    },
-    priceSymbol: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '700',
-        marginRight: 2,
-    },
-    priceAmount: {
-        color: '#FFFFFF',
-        fontSize: 24,
-        fontWeight: '900',
-    },
-    priceUnit: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 12,
-        fontWeight: '600',
-        marginLeft: 2,
-    },
-    content: {
-        padding: 16,
-    },
-    mainInfo: {
-        marginBottom: 12,
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
     title: {
-        fontSize: 18,
-        fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 4,
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#111827',
+        flex: 1,
+        marginRight: 6,
+        lineHeight: 20,
     },
     locationRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 3,
+        marginTop: 3,
     },
-    locationText: {
-        fontSize: 13,
-        color: '#64748B',
-        fontWeight: '600',
-    },
-    detailRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F8FAFC',
-        padding: 10,
-        borderRadius: 12,
-        marginBottom: 14,
-    },
-    detailItem: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-    },
-    detailText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#475569',
-    },
-    ratingText: {
-        fontSize: 12,
+    locationText: { fontSize: 11, color: '#6B7280', fontWeight: '500' },
+    price: {
+        fontSize: 16,
         fontWeight: '800',
-        color: '#1E293B',
+        color: COLORS.primary,
+        marginTop: 6,
     },
-    divider: {
-        width: 1,
-        height: 12,
-        backgroundColor: '#E2E8F0',
-    },
-    amenitiesContainer: {
+    priceUnit: { fontSize: 11, fontWeight: '400', color: '#9CA3AF' },
+    ratingRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 2,
+        marginTop: 8,
     },
-    amenityChip: {
-        backgroundColor: '#EEF2FF',
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 8,
-    },
-    amenityText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#4F46E5',
-    },
-    moreAmenity: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#94A3B8',
-        marginLeft: 4,
-    },
+    ratingText: { fontSize: 11, fontWeight: '700', color: '#111827', marginLeft: 3 },
+    furnDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#D1D5DB', marginHorizontal: 5 },
+    furnText: { fontSize: 11, color: '#6B7280' },
 });
