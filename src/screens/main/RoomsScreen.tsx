@@ -206,56 +206,45 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    container: { flex: 1, backgroundColor: '#0F0F0F' },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        flexDirection: 'row', alignItems: 'center',
+        justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12,
     },
     iconBtn: {
         width: 40, height: 40, borderRadius: 10,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center',
     },
     headerCenter: { flex: 1, alignItems: 'center' },
-    headerLocation: {
-        flexDirection: 'row', alignItems: 'center', gap: 4,
-    },
-    headerTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
+    headerLocation: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    headerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
     filterIconBtn: {
         width: 40, height: 40, borderRadius: 10,
-        backgroundColor: COLORS.primary,
-        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#00C896', alignItems: 'center', justifyContent: 'center',
     },
 
     searchSection: { paddingHorizontal: 16, marginBottom: 12 },
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F3F4F6',
-        borderRadius: 10,
+        backgroundColor: '#1C1C1E',
+        borderRadius: 14,
         paddingHorizontal: 14,
-        height: 46,
-        gap: 8,
+        height: 50,
+        gap: 10,
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#111827' },
+    searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF' },
 
-    // Underline tab style (Image 1)
-    filterSection: { borderBottomWidth: 1, borderBottomColor: '#E5E7EB', marginBottom: 8 },
+    // Underline tab style — dark
+    filterSection: { borderBottomWidth: 1, borderBottomColor: '#2C2C2E', marginBottom: 8 },
     categoryScroll: { paddingLeft: 16, gap: 0 },
     catChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderBottomWidth: 2.5,
-        borderBottomColor: 'transparent',
+        paddingHorizontal: 16, paddingVertical: 12,
+        borderBottomWidth: 2.5, borderBottomColor: 'transparent',
     },
-    catChipActive: {
-        borderBottomColor: COLORS.primary,
-    },
-    catLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
-    catLabelActive: { color: COLORS.primary, fontWeight: '700' },
+    catChipActive: { borderBottomColor: '#00C896' },
+    catLabel: { fontSize: 14, fontWeight: '600', color: '#636366' },
+    catLabelActive: { color: '#00C896', fontWeight: '700' },
 
     // Unused but kept for type safety
     countBadge: {},

@@ -1,27 +1,27 @@
-// Apple iOS design system
+// Dark mode design system — reference image style
 export const COLORS = {
-    primary: '#007AFF',        // iOS system blue
-    secondary: '#5856D6',      // iOS indigo
-    accent: '#34C759',         // iOS green
-    background: '#F2F2F7',     // iOS system grey background
-    surface: '#FFFFFF',
-    surfaceAlt: '#F2F2F7',
-    text: '#000000',
-    textSecondary: '#8E8E93',   // iOS secondary label
-    textMuted: '#C7C7CC',       // iOS tertiary label
-    border: '#C6C6C8',          // iOS separator
-    borderLight: '#E5E5EA',     // iOS opaque separator
-    error: '#FF3B30',           // iOS red
-    success: '#34C759',         // iOS green
-    warning: '#FF9500',         // iOS orange
+    primary: '#00C896',         // Teal accent (exactly from reference)
+    primaryDark: '#00A87E',
+    primaryGlow: '#00C89620',
+    background: '#0F0F0F',      // Near black
+    surface: '#1C1C1E',         // Dark card
+    surfaceElevated: '#252527', // Slightly elevated card
+    surfaceAlt: '#2C2C2E',
+    text: '#FFFFFF',
+    textSecondary: '#AEAEB2',
+    textMuted: '#636366',
+    border: '#2C2C2E',
+    borderLight: '#38383A',
+    error: '#FF453A',
+    success: '#30D158',
+    warning: '#FFD60A',
     white: '#FFFFFF',
     black: '#000000',
-    phase1: '#007AFF',
-    phase2: '#5856D6',
+    phase1: '#00C896',
+    phase2: '#007AFF',
     phase3: '#AF52DE',
-    card: '#FFFFFF',
-    input: '#FFFFFF',
-    destructive: '#FF3B30',
+    card: '#1C1C1E',
+    input: '#2C2C2E',
 };
 
 export const FONTS = {
@@ -47,8 +47,8 @@ export const BORDER_RADIUS = {
     xs: 6,
     sm: 10,
     md: 14,
-    lg: 18,
-    xl: 24,
+    lg: 20,
+    xl: 28,
     full: 9999,
 };
 
@@ -56,30 +56,37 @@ export const SHADOWS = {
     none: { elevation: 0, shadowOpacity: 0 },
     light: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 4,
     },
     medium: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 20,
+        elevation: 8,
     },
     premium: {
-        shadowColor: '#007AFF',
+        shadowColor: '#00C896',
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.18,
+        shadowOpacity: 0.35,
         shadowRadius: 20,
-        elevation: 6,
+        elevation: 10,
     },
     soft: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
+        shadowOpacity: 0.2,
         shadowRadius: 8,
-        elevation: 1,
+        elevation: 2,
+    },
+    teal: {
+        shadowColor: '#00C896',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 6,
     }
 };

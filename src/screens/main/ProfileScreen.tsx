@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Alert,
-    Switch,
+    View, Text, StyleSheet, TouchableOpacity,
+    ScrollView, Alert, Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,402 +14,273 @@ const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
 export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigation }) => {
     const { t, i18n } = useTranslation();
-    const { user, completeProfile, logout, setRole, updateProfile } = useAuth();
+    const { user, logout, setRole, completeProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user?.name || '');
     const [selectedArea, setSelectedArea] = useState(user?.area || 'Phase 1');
     const [loading, setLoading] = useState(false);
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [notifications, setNotifications] = useState(true);
+
+    const initial = user?.name?.charAt(0).toUpperCase() || 'U';
+    const roleLabel = user?.role === 'employer' ? 'Employer' : user?.role === 'worker' ? 'Worker' : 'Seeker';
 
     const handleUpdate = async () => {
-        try {
-            setLoading(true);
-            await completeProfile({ name, area: selectedArea });
-            setIsEditing(false);
-            Alert.alert('Success', 'Profile updated');
-        } catch {
-            Alert.alert('Error', 'Update failed, try again');
-        } finally {
-            setLoading(false);
-        }
+        try { setLoading(true); await completeProfile({ name, area: selectedArea }); setIsEditing(false); }
+        catch { Alert.alert('Error', 'Update failed'); }
+        finally { setLoading(false); }
     };
 
-    const handleSwitchRole = (newRole: UserRole) => {
-        Alert.alert('Switch Mode', 'Change your role on the platform?', [
+    const switchRole = (r: UserRole) =>
+        Alert.alert('Switch Mode', 'Change your role?', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Switch', onPress: () => setRole(newRole) },
+            { text: 'Switch', onPress: () => setRole(r) },
         ]);
-    };
-
-    const roleLabel = user?.role === 'employer' ? 'Employer' : user?.role === 'worker' ? 'Worker' : 'Seeker';
-    const initial = user?.name?.charAt(0).toUpperCase() || 'U';
 
     return (
-        <View style={styles.root}>
-            <SafeAreaView edges={['top']} style={styles.safeTop} />
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={s.root}>
+            <SafeAreaView edges={['top']} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
 
-                {/* ── Hero Avatar Block ── */}
-                <View style={styles.heroBlock}>
-                    <View style={styles.avatarRing}>
-                        <View style={styles.avatarCircle}>
-                            <Text style={styles.avatarInitial}>{initial}</Text>
+                {/* ── Title bar ── */}
+                <View style={s.topBar}>
+                    <Text style={s.screenTitle}>Profile</Text>
+                </View>
+
+                {/* ── Hero card ── */}
+                <View style={s.heroCard}>
+                    <View style={s.heroAvatarWrap}>
+                        <View style={s.heroAvatar}>
+                            <Text style={s.heroInitial}>{initial}</Text>
+                        </View>
+                        <View style={s.onlineDot} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 16 }}>
+                        <Text style={s.heroName}>{user?.name || 'Your Name'}</Text>
+                        <Text style={s.heroSub}>{user?.email || 'Hinjewadi Connect'}</Text>
+                        <View style={s.heroBadgeRow}>
+                            <View style={s.heroBadge}>
+                                <MaterialCommunityIcons name="map-marker" size={10} color="#00C896" />
+                                <Text style={s.heroBadgeText}>{user?.area || '—'}</Text>
+                            </View>
+                            <View style={[s.heroBadge, { backgroundColor: '#007AFF20' }]}>
+                                <Text style={[s.heroBadgeText, { color: '#007AFF' }]}>{roleLabel}</Text>
+                            </View>
                         </View>
                     </View>
-                    <Text style={styles.heroName}>{user?.name || 'Your Name'}</Text>
-                    <View style={styles.heroPillRow}>
-                        <View style={styles.heroPill}>
-                            <MaterialCommunityIcons name="map-marker" size={12} color="#007AFF" />
-                            <Text style={styles.heroPillText}>{user?.area || 'Hinjewadi'}</Text>
-                        </View>
-                        <View style={[styles.heroPill, styles.heroPillRole]}>
-                            <Text style={styles.heroPillRoleText}>{roleLabel}</Text>
-                        </View>
-                    </View>
-                    {!isEditing && (
-                        <TouchableOpacity style={styles.heroEditBtn} onPress={() => setIsEditing(true)}>
-                            <Text style={styles.heroEditBtnText}>Edit Profile</Text>
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity style={s.editHeroBtn} onPress={() => setIsEditing(!isEditing)}>
+                        <MaterialCommunityIcons name={isEditing ? 'close' : 'pencil-outline'} size={18} color="#00C896" />
+                    </TouchableOpacity>
                 </View>
 
                 {/* ── Edit Form ── */}
                 {isEditing && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>EDIT PROFILE</Text>
-                        <View style={styles.card}>
-                            <AppTextInput
-                                label="Name"
-                                value={name}
-                                onChangeText={setName}
-                                placeholder="Your name"
-                            />
-                            <Text style={styles.fieldLabel}>Area</Text>
-                            <View style={styles.areaRow}>
-                                {AREAS.map(area => (
-                                    <TouchableOpacity
-                                        key={area}
-                                        style={[styles.areaChip, selectedArea === area && styles.areaChipActive]}
-                                        onPress={() => setSelectedArea(area)}
-                                    >
-                                        <Text style={[styles.areaChipText, selectedArea === area && styles.areaChipTextActive]}>
-                                            {area}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                            <View style={styles.editBtnRow}>
-                                <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
-                                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                    <View style={s.card}>
+                        <Text style={s.cardTitle}>Edit Profile</Text>
+                        <AppTextInput label="Name" value={name} onChangeText={setName} placeholder="Your name" />
+                        <Text style={s.fieldLabel}>Area</Text>
+                        <View style={s.areaRow}>
+                            {AREAS.map(a => (
+                                <TouchableOpacity
+                                    key={a} style={[s.areaChip, selectedArea === a && s.areaChipOn]}
+                                    onPress={() => setSelectedArea(a)}
+                                >
+                                    <Text style={[s.areaChipText, selectedArea === a && s.areaChipTextOn]}>{a}</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate} disabled={loading}>
-                                    <Text style={styles.saveBtnText}>{loading ? 'Saving…' : 'Save'}</Text>
-                                </TouchableOpacity>
-                            </View>
+                            ))}
+                        </View>
+                        <View style={s.editBtns}>
+                            <TouchableOpacity style={s.cancelBtn} onPress={() => setIsEditing(false)}>
+                                <Text style={s.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={s.saveBtn} onPress={handleUpdate} disabled={loading}>
+                                <Text style={s.saveText}>{loading ? 'Saving…' : 'Save'}</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
 
-                {/* ── Account Section ── */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>ACCOUNT</Text>
-                    <View style={styles.card}>
-                        <SettingsRow
-                            icon="account-outline" iconBg="#007AFF"
-                            label="Full Name" value={user?.name || '—'}
-                            onPress={() => setIsEditing(true)}
-                        />
-                        <Separator />
-                        <SettingsRow
-                            icon="map-marker-outline" iconBg="#34C759"
-                            label="Location" value={user?.area || '—'}
-                            onPress={() => setIsEditing(true)}
-                        />
-                        <Separator />
-                        <SettingsRow
-                            icon="shield-check-outline" iconBg="#5856D6"
-                            label="Account Status" value="Verified"
-                        />
-                    </View>
+                {/* ── Mode / Role ── */}
+                <Text style={s.groupLabel}>ACTIVE MODE</Text>
+                <View style={s.card}>
+                    {[
+                        { role: 'tenant' as UserRole, label: 'Looking for Room / Job', icon: 'account-search-outline', color: '#007AFF' },
+                        { role: 'worker' as UserRole, label: 'Offering Services / Work', icon: 'briefcase-outline', color: '#00C896' },
+                        { role: 'employer' as UserRole, label: 'Hiring / Posting Listings', icon: 'office-building-outline', color: '#FF9500' },
+                    ].map((item, i, arr) => (
+                        <React.Fragment key={item.role}>
+                            <TouchableOpacity style={s.row} onPress={() => switchRole(item.role)} activeOpacity={0.7}>
+                                <View style={[s.rowIcon, { backgroundColor: item.color + '25' }]}>
+                                    <MaterialCommunityIcons name={item.icon as any} size={18} color={item.color} />
+                                </View>
+                                <Text style={s.rowLabel}>{item.label}</Text>
+                                {user?.role === item.role
+                                    ? <MaterialCommunityIcons name="check-circle" size={20} color="#00C896" />
+                                    : <MaterialCommunityIcons name="chevron-right" size={20} color="#3A3A3C" />
+                                }
+                            </TouchableOpacity>
+                            {i < arr.length - 1 && <View style={s.sep} />}
+                        </React.Fragment>
+                    ))}
                 </View>
 
-                {/* ── Role Section ── */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>ACTIVE MODE</Text>
-                    <View style={styles.card}>
-                        <RoleRow
-                            label="Looking for Room / Job"
-                            iconBg="#007AFF" icon="account-search-outline"
-                            active={user?.role === 'tenant'}
-                            onPress={() => handleSwitchRole('tenant')}
-                        />
-                        <Separator />
-                        <RoleRow
-                            label="Offering Services / Work"
-                            iconBg="#34C759" icon="briefcase-outline"
-                            active={user?.role === 'worker'}
-                            onPress={() => handleSwitchRole('worker')}
-                        />
-                        <Separator />
-                        <RoleRow
-                            label="Hiring / Posting Listings"
-                            iconBg="#FF9500" icon="office-building-outline"
-                            active={user?.role === 'employer'}
-                            onPress={() => handleSwitchRole('employer')}
-                        />
+                {/* ── Settings ── */}
+                <Text style={s.groupLabel}>SETTINGS</Text>
+                <View style={s.card}>
+                    <View style={s.row}>
+                        <View style={[s.rowIcon, { backgroundColor: '#FF453A25' }]}>
+                            <MaterialCommunityIcons name="bell-outline" size={18} color="#FF453A" />
+                        </View>
+                        <Text style={s.rowLabel}>Notifications</Text>
+                        <Switch value={notifications} onValueChange={setNotifications}
+                            trackColor={{ true: '#00C896', false: '#3A3A3C' }}
+                            thumbColor="#FFFFFF" />
                     </View>
+                    <View style={s.sep} />
+                    <SettingsRow icon="translate" color="#5856D6" label="Language"
+                        value={i18n.language.toUpperCase()} />
+                    <View style={s.sep} />
+                    {user?.role === 'worker' && (
+                        <>
+                            <SettingsRow icon="account-tie-outline" color="#007AFF"
+                                label="Professional Profile"
+                                onPress={() => navigation.navigate('CreateServiceProfile')} />
+                            <View style={s.sep} />
+                        </>
+                    )}
+                    {user?.role === 'employer' && (
+                        <>
+                            <SettingsRow icon="plus-circle-outline" color="#007AFF"
+                                label="Post New Listing" onPress={() => navigation.navigate('PostListing')} />
+                            <View style={s.sep} />
+                            <SettingsRow icon="clipboard-list-outline" color="#5856D6"
+                                label="Manage My Posts" onPress={() => navigation.navigate('ManagePosts')} />
+                            <View style={s.sep} />
+                        </>
+                    )}
+                    <SettingsRow icon="shield-check-outline" color="#00C896" label="Legal & Privacy"
+                        onPress={() => (navigation as any).navigate('Legal')} />
+                    <View style={s.sep} />
+                    <SettingsRow icon="help-circle-outline" color="#636366" label="Help & Support"
+                        onPress={() => (navigation as any).navigate('HelpSupport')} />
                 </View>
 
-                {/* ── Language ── */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>LANGUAGE</Text>
-                    <View style={styles.card}>
-                        {[
-                            { code: 'en', label: 'English' },
-                            { code: 'hi', label: 'हिंदी' },
-                            { code: 'mr', label: 'मराठी' },
-                        ].map((lang, idx, arr) => (
-                            <React.Fragment key={lang.code}>
-                                <TouchableOpacity
-                                    style={styles.settingsRow}
-                                    onPress={() => i18n.changeLanguage(lang.code)}
-                                >
-                                    <Text style={styles.rowLabel}>{lang.label}</Text>
-                                    {i18n.language === lang.code && (
-                                        <MaterialCommunityIcons name="check" size={18} color="#007AFF" />
-                                    )}
-                                </TouchableOpacity>
-                                {idx < arr.length - 1 && <Separator />}
-                            </React.Fragment>
-                        ))}
-                    </View>
-                </View>
+                {/* ── Sign Out ── */}
+                <TouchableOpacity style={s.logoutCard} onPress={logout} activeOpacity={0.8}>
+                    <MaterialCommunityIcons name="logout-variant" size={18} color="#FF453A" />
+                    <Text style={s.logoutText}>Sign Out</Text>
+                </TouchableOpacity>
 
-                {/* ── More Section ── */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>MORE</Text>
-                    <View style={styles.card}>
-                        <SettingsRow
-                            icon="bell-outline" iconBg="#FF3B30"
-                            label="Notifications"
-                            trailing={
-                                <Switch
-                                    value={notificationsEnabled}
-                                    onValueChange={setNotificationsEnabled}
-                                    trackColor={{ true: '#34C759', false: '#E5E5EA' }}
-                                    thumbColor="#FFFFFF"
-                                />
-                            }
-                        />
-                        <Separator />
-                        {user?.role === 'worker' && (
-                            <>
-                                <SettingsRow
-                                    icon="account-tie-outline" iconBg="#5856D6"
-                                    label="Professional Profile"
-                                    onPress={() => navigation.navigate('CreateServiceProfile')}
-                                />
-                                <Separator />
-                            </>
-                        )}
-                        {user?.role === 'employer' && (
-                            <>
-                                <SettingsRow
-                                    icon="plus-circle-outline" iconBg="#007AFF"
-                                    label="Post New Listing"
-                                    onPress={() => navigation.navigate('PostListing')}
-                                />
-                                <Separator />
-                                <SettingsRow
-                                    icon="clipboard-list-outline" iconBg="#5856D6"
-                                    label="Manage My Posts"
-                                    onPress={() => navigation.navigate('ManagePosts')}
-                                />
-                                <Separator />
-                            </>
-                        )}
-                        <SettingsRow
-                            icon="shield-check-outline" iconBg="#34C759"
-                            label="Legal & Privacy"
-                            onPress={() => (navigation as any).navigate('Legal')}
-                        />
-                        <Separator />
-                        <SettingsRow
-                            icon="help-circle-outline" iconBg="#8E8E93"
-                            label="Help & Support"
-                            onPress={() => (navigation as any).navigate('HelpSupport')}
-                        />
-                    </View>
-                </View>
-
-                {/* ── Logout ── */}
-                <View style={styles.section}>
-                    <View style={styles.card}>
-                        <TouchableOpacity style={styles.settingsRow} onPress={logout}>
-                            <Text style={styles.logoutText}>Sign Out</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                <Text style={styles.versionText}>Hinjewadi Connect v1.2.5</Text>
-                <View style={{ height: 32 }} />
+                <Text style={s.version}>Hinjewadi Connect v1.2.5</Text>
+                <View style={{ height: 110 }} />
             </ScrollView>
         </View>
     );
 };
 
-// ─── Sub-Components ──────────────────────────────────────────
-
-const Separator = () => <View style={styles.separator} />;
-
-const SettingsRow = ({
-    icon, iconBg, label, value, onPress, trailing
-}: {
-    icon: any; iconBg: string; label: string;
-    value?: string; onPress?: () => void; trailing?: React.ReactNode;
+const SettingsRow = ({ icon, color, label, value, onPress }: {
+    icon: any; color: string; label: string; value?: string; onPress?: () => void;
 }) => (
-    <TouchableOpacity
-        style={styles.settingsRow}
-        onPress={onPress}
-        activeOpacity={onPress ? 0.6 : 1}
-        disabled={!onPress && !trailing}
-    >
-        <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
-            <MaterialCommunityIcons name={icon} size={17} color="#FFFFFF" />
+    <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={onPress ? 0.7 : 1} disabled={!onPress}>
+        <View style={[s.rowIcon, { backgroundColor: color + '25' }]}>
+            <MaterialCommunityIcons name={icon} size={18} color={color} />
         </View>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <View style={styles.rowRight}>
-            {value && <Text style={styles.rowValue}>{value}</Text>}
-            {trailing}
-            {onPress && !trailing && (
-                <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
-            )}
-        </View>
+        <Text style={s.rowLabel}>{label}</Text>
+        {value ? <Text style={s.rowValue}>{value}</Text> : onPress ? <MaterialCommunityIcons name="chevron-right" size={20} color="#3A3A3C" /> : null}
     </TouchableOpacity>
 );
 
-const RoleRow = ({
-    label, icon, iconBg, active, onPress
-}: {
-    label: string; icon: any; iconBg: string; active: boolean; onPress: () => void;
-}) => (
-    <TouchableOpacity style={styles.settingsRow} onPress={onPress} activeOpacity={0.6}>
-        <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
-            <MaterialCommunityIcons name={icon} size={17} color="#FFFFFF" />
-        </View>
-        <Text style={styles.rowLabel}>{label}</Text>
-        <View style={styles.rowRight}>
-            {active ? (
-                <MaterialCommunityIcons name="check-circle" size={20} color="#007AFF" />
-            ) : (
-                <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
-            )}
-        </View>
-    </TouchableOpacity>
-);
+const s = StyleSheet.create({
+    root: { flex: 1, backgroundColor: '#0F0F0F' },
+    scroll: { paddingHorizontal: 20 },
+    topBar: { paddingTop: 12, paddingBottom: 8 },
+    screenTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
 
-const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#F2F2F7' },
-    safeTop: { backgroundColor: '#F2F2F7' },
-    scroll: { paddingTop: 0 },
-
-    // Hero
-    heroBlock: {
-        alignItems: 'center',
-        paddingTop: 28,
-        paddingBottom: 28,
-        backgroundColor: '#F2F2F7',
+    // Hero card
+    heroCard: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#1C1C1E', borderRadius: 22, padding: 16,
+        marginBottom: 24,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4, shadowRadius: 20, elevation: 8,
     },
-    avatarRing: {
-        width: 92, height: 92, borderRadius: 46,
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center', justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 12,
-        elevation: 6,
-        marginBottom: 14,
+    heroAvatarWrap: { position: 'relative' },
+    heroAvatar: {
+        width: 60, height: 60, borderRadius: 20,
+        backgroundColor: '#00C896', alignItems: 'center', justifyContent: 'center',
     },
-    avatarCircle: {
-        width: 80, height: 80, borderRadius: 40,
-        backgroundColor: '#007AFF',
-        alignItems: 'center', justifyContent: 'center',
+    heroInitial: { fontSize: 26, fontWeight: '700', color: '#000000' },
+    onlineDot: {
+        position: 'absolute', bottom: 2, right: 2,
+        width: 12, height: 12, borderRadius: 6,
+        backgroundColor: '#30D158', borderWidth: 2, borderColor: '#1C1C1E',
     },
-    avatarInitial: { fontSize: 34, fontWeight: '700', color: '#FFFFFF' },
-    heroName: { fontSize: 24, fontWeight: '700', color: '#000000', letterSpacing: -0.5 },
-    heroPillRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-    heroPill: {
+    heroName: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+    heroSub: { fontSize: 12, color: '#636366', marginTop: 2 },
+    heroBadgeRow: { flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' },
+    heroBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
-        backgroundColor: '#E5F0FF', paddingHorizontal: 12, paddingVertical: 5,
+        backgroundColor: '#00C89620', paddingHorizontal: 8, paddingVertical: 4,
         borderRadius: 20,
     },
-    heroPillText: { fontSize: 12, color: '#007AFF', fontWeight: '600' },
-    heroPillRole: { backgroundColor: '#E5E5EA' },
-    heroPillRoleText: { fontSize: 12, color: '#6B6B73', fontWeight: '600' },
-    heroEditBtn: {
-        marginTop: 14,
-        paddingHorizontal: 28, paddingVertical: 10,
-        backgroundColor: '#007AFF', borderRadius: 22,
+    heroBadgeText: { fontSize: 11, color: '#00C896', fontWeight: '600' },
+    editHeroBtn: {
+        width: 36, height: 36, borderRadius: 12,
+        backgroundColor: '#00C89615', alignItems: 'center', justifyContent: 'center',
     },
-    heroEditBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-
-    // Sections
-    section: { marginTop: 28, paddingHorizontal: 16 },
-    sectionLabel: {
-        fontSize: 12, fontWeight: '600', color: '#8E8E93',
-        letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
-    },
-    card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 14,
-        overflow: 'hidden',
-    },
-    separator: {
-        height: StyleSheet.hairlineWidth,
-        backgroundColor: '#E5E5EA',
-        marginLeft: 56,
-    },
-    settingsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 13,
-        paddingHorizontal: 16,
-        minHeight: 52,
-    },
-    rowIcon: {
-        width: 30, height: 30, borderRadius: 8,
-        alignItems: 'center', justifyContent: 'center',
-        marginRight: 14,
-    },
-    rowLabel: { flex: 1, fontSize: 16, color: '#000000', fontWeight: '400' },
-    rowRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    rowValue: { fontSize: 15, color: '#8E8E93' },
 
     // Edit form
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: '#000000', marginBottom: 8, marginTop: 4 },
-    areaRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    fieldLabel: { fontSize: 13, fontWeight: '600', color: '#AEAEB2', marginBottom: 8 },
+    areaRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
     areaChip: {
-        flex: 1, paddingVertical: 9, borderRadius: 10,
-        backgroundColor: '#F2F2F7', alignItems: 'center',
-        borderWidth: 1, borderColor: '#E5E5EA',
+        flex: 1, paddingVertical: 10, borderRadius: 12,
+        backgroundColor: '#2C2C2E', alignItems: 'center',
     },
-    areaChipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-    areaChipText: { fontSize: 13, fontWeight: '600', color: '#6B6B73' },
-    areaChipTextActive: { color: '#FFFFFF' },
-    editBtnRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    areaChipOn: { backgroundColor: '#00C896' },
+    areaChipText: { fontSize: 13, fontWeight: '600', color: '#636366' },
+    areaChipTextOn: { color: '#000000' },
+    editBtns: { flexDirection: 'row', gap: 10 },
     cancelBtn: {
-        flex: 1, paddingVertical: 13, backgroundColor: '#F2F2F7',
-        borderRadius: 12, alignItems: 'center',
+        flex: 1, paddingVertical: 13, backgroundColor: '#2C2C2E',
+        borderRadius: 14, alignItems: 'center',
     },
-    cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#8E8E93' },
+    cancelText: { fontSize: 15, fontWeight: '600', color: '#636366' },
     saveBtn: {
-        flex: 2, paddingVertical: 13, backgroundColor: '#007AFF',
-        borderRadius: 12, alignItems: 'center',
+        flex: 2, paddingVertical: 13, backgroundColor: '#00C896',
+        borderRadius: 14, alignItems: 'center',
     },
-    saveBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    saveText: { fontSize: 15, fontWeight: '700', color: '#000000' },
 
-    // Logout & misc
-    logoutText: { fontSize: 16, color: '#FF3B30', fontWeight: '400', textAlign: 'center', flex: 1 },
-    versionText: { fontSize: 12, color: '#C7C7CC', textAlign: 'center', marginTop: 20 },
+    // Groups & Cards
+    groupLabel: {
+        fontSize: 11, fontWeight: '700', color: '#636366',
+        letterSpacing: 1, marginBottom: 10, marginLeft: 4,
+    },
+    card: {
+        backgroundColor: '#1C1C1E', borderRadius: 20,
+        marginBottom: 24, overflow: 'hidden',
+        padding: 4,
+    },
+    cardTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', marginBottom: 16, paddingHorizontal: 12, paddingTop: 8 },
+
+    // Rows
+    row: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: 13, paddingHorizontal: 12, minHeight: 50,
+    },
+    rowIcon: {
+        width: 34, height: 34, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center', marginRight: 14,
+    },
+    rowLabel: { flex: 1, fontSize: 15, color: '#FFFFFF', fontWeight: '400' },
+    rowValue: { fontSize: 14, color: '#636366' },
+    sep: { height: StyleSheet.hairlineWidth, backgroundColor: '#2C2C2E', marginLeft: 60 },
+
+    // Logout
+    logoutCard: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#FF453A15', borderRadius: 16, paddingVertical: 16, gap: 8,
+        borderWidth: 1, borderColor: '#FF453A25', marginBottom: 20,
+    },
+    logoutText: { fontSize: 16, fontWeight: '600', color: '#FF453A' },
+    version: { fontSize: 12, color: '#3A3A3C', textAlign: 'center' },
 });

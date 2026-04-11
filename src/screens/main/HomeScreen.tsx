@@ -1,298 +1,288 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+    View, Text, StyleSheet, ScrollView, TouchableOpacity,
+    TextInput, ActivityIndicator, RefreshControl, Image
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { MainTabScreenProps, Room, Job } from '../../types';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { roomService } from '../../services/roomService';
 import { jobService } from '../../services/jobService';
-import { appConfigService, AppConfig } from '../../services/appConfigService';
-import { CategoryItem, FeaturedCard, JobMiniCard, ActionCard, BigActionBtn, StatCard } from '../../components/HomeComponents';
-
 import { useTranslation } from 'react-i18next';
-import { AIInsights } from '../../components/AIInsights';
 
 const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
     const [recentJobs, setRecentJobs] = useState<Job[]>([]);
-    const [appConfig, setAppConfig] = useState<AppConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [search, setSearch] = useState('');
 
-    const userName = user?.name?.split(' ')[0] || t('guest');
+    const userName = user?.name?.split(' ')[0] || 'there';
 
-    useEffect(() => {
-        loadDashboardData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
-    const loadDashboardData = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const [rooms, jobs, config] = await Promise.all([
-                roomService.getRooms(5),
-                jobService.getJobs(5),
-                appConfigService.getConfig()
+            const [rooms, jobs] = await Promise.all([
+                roomService.getRooms(6),
+                jobService.getJobs(4),
             ]);
             setFeaturedRooms(rooms);
             setRecentJobs(jobs);
-            setAppConfig(config);
-        } catch (error) {
-            console.error('Error loading dashboard:', error);
-        } finally {
+        } catch { } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        loadDashboardData();
-    };
-
-    const renderTenantHome = () => (
-        <View style={styles.dashboard}>
-            <View style={styles.welcomeSection}>
-                <Text style={styles.greeting}>{t('namaste')}, {userName}</Text>
-                <Text style={styles.subtitle}>{t('home_subtitle', { area: user?.area || 'Hinjewadi' })}</Text>
-            </View>
-
-            {/* AI Insights - Smart Market Analysis */}
-            <AIInsights />
-
-            {/* Category Grid - Dynamic & Clean */}
-            <View style={styles.categoryGrid}>
-                <CategoryItem title={t('rooms')} icon="home-variant" color="#007AFF" onPress={() => navigation.navigate('Rooms')} />
-                <CategoryItem title={t('jobs')} icon="briefcase" color="#34C759" onPress={() => navigation.navigate('Jobs')} />
-                <CategoryItem title={t('services')} icon="account-group" color="#FF9500" onPress={() => navigation.navigate('Services')} />
-                <CategoryItem title={t('post')} icon="plus-thick" color="#AF52DE" onPress={() => navigation.navigate('PostListing')} />
-            </View>
-
-            {/* Live Rooms Section */}
-            {featuredRooms.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>{t('featured_rooms')}</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Rooms')}>
-                            <Text style={styles.seeAllText}>{t('see_all')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                        {featuredRooms.map(room => (
-                            <FeaturedCard
-                                key={room.id}
-                                title={room.title}
-                                price={`₹${room.price.toLocaleString()}`}
-                                area={room.area}
-                                item={room}
-                                onPress={() => navigation.navigate('RoomDetail', { roomId: room.id })}
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
-            {/* Live Jobs Section */}
-            {recentJobs.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>{t('latest_jobs')}</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Jobs')}>
-                            <Text style={styles.seeAllText}>{t('see_all')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                        {recentJobs.map(job => (
-                            <JobMiniCard
-                                key={job.id}
-                                title={job.title}
-                                company={job.company}
-                                salary={job.salary}
-                                onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-
-            {appConfig?.promoBanner?.visible && (
-                <View style={styles.promoBanner}>
-                    <View style={styles.promoText}>
-                        <Text style={styles.promoTitle}>{appConfig.promoBanner.title}</Text>
-                        <Text style={styles.promoSubtitle}>{appConfig.promoBanner.subtitle}</Text>
-                        <TouchableOpacity style={styles.promoBtn} onPress={() => navigation.navigate('Profile')}>
-                            <Text style={styles.promoBtnText}>{appConfig.promoBanner.buttonText}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <MaterialCommunityIcons name="rocket-launch" size={60} color={COLORS.white} style={styles.promoIcon} />
-                </View>
-            )}
-        </View>
-    );
-
-    const renderEmployerHome = () => (
-        <View style={styles.dashboard}>
-            <View style={styles.welcomeSection}>
-                <Text style={styles.greeting}>Employer Hub</Text>
-                <Text style={styles.subtitle}>Manage your active listings</Text>
-            </View>
-
-            <View style={styles.statsRow}>
-                <StatCard label="Postings" value="Live" icon="post" color={COLORS.primary} />
-                <StatCard label="Response" value="24h" icon="clock-fast" color={COLORS.success} />
-            </View>
-
-            <View style={styles.actionGrid}>
-                <BigActionBtn title="Post New Listing" icon="plus-circle" color="#007AFF" onPress={() => navigation.navigate('PostListing')} />
-                <BigActionBtn title="View My Posts" icon="clipboard-list" color="#5856D6" onPress={() => navigation.navigate('ManagePosts')} />
-            </View>
-        </View>
-    );
-
-    const renderWorkerHome = () => (
-        <View style={styles.dashboard}>
-            <View style={styles.welcomeSection}>
-                <Text style={styles.greeting}>Worker Portal</Text>
-                <Text style={styles.subtitle}>You are visible in {user?.area || 'Hinjewadi'}</Text>
-            </View>
-
-            <View style={[styles.statusCard, { borderColor: user?.availability === 'Available' ? COLORS.success : COLORS.error }]}>
-                <View style={styles.statusInfo}>
-                    <View style={[styles.statusDot, { backgroundColor: user?.availability === 'Available' ? COLORS.success : COLORS.error }]} />
-                    <Text style={styles.statusLabel}>Current Status: <Text style={styles.statusValue}>{user?.availability || 'Available'}</Text></Text>
-                </View>
-                <TouchableOpacity style={styles.statusBtn} onPress={() => navigation.navigate('Profile')}>
-                    <Text style={styles.statusBtnText}>Change</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.quickActions}>
-                <ActionCard title="Find Jobs" subtitle="Browse local openings" icon="magnify" color="#007AFF" onPress={() => navigation.navigate('Jobs')} />
-                <ActionCard title="My Profile" subtitle="See profile visits" icon="chart-line" color="#34C759" onPress={() => navigation.navigate('Profile')} />
-            </View>
-        </View>
-    );
-
     if (loading && !refreshing) {
         return (
-            <SafeAreaView style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={styles.loadingText}>Fetching latest updates...</Text>
-            </SafeAreaView>
+            <View style={styles.loadingWrap}>
+                <ActivityIndicator size="large" color="#00C896" />
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <ScrollView 
-                showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
-            >
+        <View style={styles.root}>
+            <SafeAreaView edges={['top']}>
+                {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.brandName}>Hinjewadi</Text>
-                        <Text style={styles.locationText}>{user?.area || 'All Phases'} · Pune</Text>
+                        <View style={styles.locationRow}>
+                            <MaterialCommunityIcons name="map-marker" size={14} color="#00C896" />
+                            <Text style={styles.locationText}>{user?.area || 'Hinjewadi'}, Pune</Text>
+                        </View>
+                        <Text style={styles.greeting}>Hello, {userName} 👋</Text>
                     </View>
-                    <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Profile')}>
-                        <View style={styles.profileAvatar}>
-                            <Text style={styles.profileAvatarChar}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
+                    <TouchableOpacity style={styles.avatarBtn} onPress={() => navigation.navigate('Profile')}>
+                        <View style={styles.avatarCircle}>
+                            <Text style={styles.avatarInitial}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>
+            </SafeAreaView>
 
-                {user?.role === 'employer' ? renderEmployerHome() : 
-                 user?.role === 'worker' ? renderWorkerHome() : 
-                 renderTenantHome()}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scroll}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#00C896" />}
+            >
+                {/* Search */}
+                <View style={styles.searchWrap}>
+                    <MaterialCommunityIcons name="magnify" size={20} color="#636366" />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search rooms, jobs..."
+                        placeholderTextColor="#636366"
+                        value={search}
+                        onChangeText={setSearch}
+                    />
+                    <View style={styles.filterBtn}>
+                        <MaterialCommunityIcons name="tune-variant" size={16} color="#00C896" />
+                    </View>
+                </View>
 
-                <View style={{ height: 40 }} />
+                {/* Quick Categories */}
+                <View style={styles.catRow}>
+                    {[
+                        { label: 'Rooms', icon: 'home-variant', screen: 'Rooms', color: '#007AFF' },
+                        { label: 'Jobs', icon: 'briefcase', screen: 'Jobs', color: '#00C896' },
+                        { label: 'Services', icon: 'account-group', screen: 'Services', color: '#FF9500' },
+                        { label: 'Post', icon: 'plus', screen: 'PostListing', color: '#AF52DE' },
+                    ].map((cat) => (
+                        <TouchableOpacity
+                            key={cat.label}
+                            style={styles.catItem}
+                            onPress={() => navigation.navigate(cat.screen as any)}
+                            activeOpacity={0.75}
+                        >
+                            <View style={[styles.catIcon, { backgroundColor: cat.color + '20' }]}>
+                                <MaterialCommunityIcons name={cat.icon as any} size={22} color={cat.color} />
+                            </View>
+                            <Text style={styles.catLabel}>{cat.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* Available Rooms */}
+                {featuredRooms.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHead}>
+                            <Text style={styles.sectionTitle}>Available Rooms</Text>
+                            <TouchableOpacity onPress={() => navigation.navigate('Rooms')}>
+                                <Text style={styles.seeAll}>See all</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Image grid — 2 col like reference */}
+                        <View style={styles.roomGrid}>
+                            {featuredRooms.slice(0, 4).map((room, idx) => (
+                                <TouchableOpacity
+                                    key={room.id}
+                                    style={[styles.roomGridCard, idx % 2 !== 0 && { marginTop: 28 }]}
+                                    onPress={() => navigation.navigate('RoomDetail', { roomId: room.id })}
+                                    activeOpacity={0.85}
+                                >
+                                    <View style={styles.roomGridImg}>
+                                        {room.images?.[0] ? (
+                                            <Image source={{ uri: room.images[0] }} style={StyleSheet.absoluteFill} />
+                                        ) : (
+                                            <View style={styles.roomGridPlaceholder}>
+                                                <MaterialCommunityIcons name="home-city-outline" size={32} color="#3A3A3C" />
+                                            </View>
+                                        )}
+                                        <View style={styles.roomGridOverlay} />
+                                        <View style={styles.roomGridBadge}>
+                                            <Text style={styles.roomGridType}>{room.type}</Text>
+                                        </View>
+                                        <TouchableOpacity style={styles.roomGridArrow}>
+                                            <MaterialCommunityIcons name="arrow-top-right" size={14} color="#000" />
+                                        </TouchableOpacity>
+                                    </View>
+                                    <View style={styles.roomGridInfo}>
+                                        <Text style={styles.roomGridPrice}>₹{room.price.toLocaleString()}<Text style={styles.roomGridPriceSub}>/mo</Text></Text>
+                                        <Text style={styles.roomGridArea} numberOfLines={1}>{room.area}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* Recent Jobs */}
+                {recentJobs.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHead}>
+                            <Text style={styles.sectionTitle}>Recent Jobs</Text>
+                            <TouchableOpacity onPress={() => navigation.navigate('Jobs')}>
+                                <Text style={styles.seeAll}>See all</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                            {recentJobs.map((job) => (
+                                <TouchableOpacity
+                                    key={job.id}
+                                    style={styles.jobCard}
+                                    onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
+                                    activeOpacity={0.85}
+                                >
+                                    <View style={styles.jobIconWrap}>
+                                        <MaterialCommunityIcons name="briefcase-outline" size={20} color="#00C896" />
+                                    </View>
+                                    <Text style={styles.jobTitle} numberOfLines={2}>{job.title}</Text>
+                                    <Text style={styles.jobCompany} numberOfLines={1}>{job.company}</Text>
+                                    <View style={styles.jobSalaryTag}>
+                                        <Text style={styles.jobSalaryText}>{job.salary}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                <View style={{ height: 110 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
-
+export default HomeScreen;
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F2F2F7' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' },
-    loadingText: { marginTop: 16, color: COLORS.textSecondary, fontWeight: '600' },
+    root: { flex: 1, backgroundColor: '#0F0F0F' },
+    loadingWrap: { flex: 1, backgroundColor: '#0F0F0F', alignItems: 'center', justifyContent: 'center' },
+    scroll: { paddingHorizontal: 20 },
+
+    // Header
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
     },
-    brandName: { fontSize: 22, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
-    locationText: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2, fontWeight: '500' },
-    profileBtn: { padding: 4 },
-    profileAvatar: {
-        width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6',
-        alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB',
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+    locationText: { fontSize: 12, color: '#AEAEB2', fontWeight: '500' },
+    greeting: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.4 },
+    avatarBtn: {},
+    avatarCircle: {
+        width: 42, height: 42, borderRadius: 14,
+        backgroundColor: '#00C896', alignItems: 'center', justifyContent: 'center',
     },
-    profileAvatarChar: { fontSize: 15, fontWeight: '800', color: COLORS.text },
-    dashboard: { padding: SPACING.lg },
-    welcomeSection: { marginBottom: SPACING.xl },
-    greeting: { fontSize: 28, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
-    subtitle: { fontSize: 16, color: COLORS.textSecondary, marginTop: 4 },
-    
-    categoryGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 },
-    categoryItem: { alignItems: 'center', width: '22%' },
-    categoryIcon: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    categoryTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+    avatarInitial: { fontSize: 18, fontWeight: '700', color: '#000000' },
 
-    section: { marginBottom: 32 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    sectionTitle: { fontSize: 19, fontWeight: '800', color: COLORS.text },
-    seeAllText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
-    horizontalScroll: { gap: 16 },
-    
-    featuredCard: { width: 220, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#F3F4F6', ...SHADOWS.light },
-    cardImagePlaceholder: { width: '100%', height: 120, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center' },
-    cardContent: { padding: 12 },
-    cardTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
-    cardFooter: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, alignItems: 'center' },
-    cardPrice: { fontSize: 16, fontWeight: '800', color: COLORS.success },
-    cardArea: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+    // Search
+    searchWrap: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#1C1C1E', borderRadius: 14,
+        paddingHorizontal: 14, height: 50, gap: 10, marginBottom: 24,
+    },
+    searchInput: { flex: 1, fontSize: 14, color: '#FFFFFF' },
+    filterBtn: {
+        width: 32, height: 32, borderRadius: 10,
+        backgroundColor: '#00C89618', alignItems: 'center', justifyContent: 'center',
+    },
 
-    jobMiniCard: { width: 180, backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#F3F4F6', ...SHADOWS.light },
-    jobIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary + '10', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-    jobTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-    jobCompany: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-    jobSalary: { fontSize: 14, fontWeight: '800', color: COLORS.primary, marginTop: 8 },
+    // Categories
+    catRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
+    catItem: { alignItems: 'center', gap: 8 },
+    catIcon: {
+        width: 58, height: 58, borderRadius: 18,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    catLabel: { fontSize: 12, fontWeight: '600', color: '#AEAEB2' },
 
-    promoBanner: { backgroundColor: COLORS.text, borderRadius: 20, padding: 24, flexDirection: 'row', overflow: 'hidden', marginBottom: 24 },
-    promoText: { flex: 1, zIndex: 1 },
-    promoTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
-    promoSubtitle: { fontSize: 14, color: '#FFFFFFCC', marginTop: 8, lineHeight: 20 },
-    promoBtn: { backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, marginTop: 16, alignSelf: 'flex-start' },
-    promoBtnText: { color: COLORS.primary, fontWeight: '800', fontSize: 13 },
-    promoIcon: { position: 'absolute', right: -15, bottom: -15, opacity: 0.15 },
+    // Section
+    section: { marginBottom: 28 },
+    sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+    seeAll: { fontSize: 13, color: '#00C896', fontWeight: '600' },
 
-    statsRow: { flexDirection: 'row', gap: 16, marginBottom: 24 },
-    statCard: { flex: 1, flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#F3F4F6', alignItems: 'center', ...SHADOWS.light },
-    statValue: { fontSize: 20, fontWeight: '800', color: COLORS.text },
-    statLabel: { fontSize: 12, color: COLORS.textSecondary, fontWeight: '600' },
-    actionGrid: { flexDirection: 'row', gap: 16 },
-    bigActionBtn: { flex: 1, height: 120, borderRadius: 20, alignItems: 'center', justifyContent: 'center', ...SHADOWS.medium },
-    bigActionBtnText: { color: '#FFFFFF', fontWeight: '800', marginTop: 8, fontSize: 14 },
+    // Room grid (reference style — 2 col offset)
+    roomGrid: { flexDirection: 'row', gap: 12 },
+    roomGridCard: { flex: 1 },
+    roomGridImg: {
+        height: 170, borderRadius: 20, overflow: 'hidden',
+        backgroundColor: '#1C1C1E', position: 'relative',
+    },
+    roomGridPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    roomGridOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    roomGridBadge: {
+        position: 'absolute', bottom: 10, left: 10,
+    },
+    roomGridType: { fontSize: 11, color: '#FFFFFF', fontWeight: '700' },
+    roomGridArrow: {
+        position: 'absolute', bottom: 10, right: 10,
+        width: 28, height: 28, borderRadius: 8,
+        backgroundColor: '#00C896',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    roomGridInfo: { paddingTop: 10, paddingHorizontal: 2 },
+    roomGridPrice: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+    roomGridPriceSub: { fontSize: 11, fontWeight: '400', color: '#636366' },
+    roomGridArea: { fontSize: 12, color: '#AEAEB2', marginTop: 2 },
 
-    statusCard: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, borderWidth: 2, backgroundColor: '#FFFFFF', marginBottom: 24, ...SHADOWS.light },
-    statusInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-    statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
-    statusLabel: { fontSize: 15, color: COLORS.textSecondary },
-    statusValue: { fontWeight: '800', color: COLORS.text },
-    statusBtn: { backgroundColor: '#F3F4F6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 },
-    statusBtnText: { fontSize: 12, fontWeight: '700', color: COLORS.text },
-    quickActions: { gap: 12 },
-    actionCard: { flexDirection: 'row', alignItems: 'center', padding: 20, backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#F3F4F6', ...SHADOWS.light },
-    actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    actionCardTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-    actionCardSubtitle: { fontSize: 13, color: COLORS.textSecondary },
+    // Job cards
+    jobCard: {
+        width: 160, backgroundColor: '#1C1C1E', borderRadius: 18, padding: 14,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
+    },
+    jobIconWrap: {
+        width: 38, height: 38, borderRadius: 12,
+        backgroundColor: '#00C89620', alignItems: 'center',
+        justifyContent: 'center', marginBottom: 12,
+    },
+    jobTitle: { fontSize: 14, fontWeight: '600', color: '#FFFFFF', lineHeight: 20 },
+    jobCompany: { fontSize: 12, color: '#636366', marginTop: 3 },
+    jobSalaryTag: {
+        marginTop: 12, backgroundColor: '#00C89615', borderRadius: 8,
+        paddingHorizontal: 8, paddingVertical: 5, alignSelf: 'flex-start',
+    },
+    jobSalaryText: { fontSize: 12, fontWeight: '700', color: '#00C896' },
 });
-
-export default HomeScreen;
