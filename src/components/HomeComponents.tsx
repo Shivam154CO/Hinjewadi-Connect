@@ -11,10 +11,10 @@ interface CategoryItemProps {
     onPress: () => void;
 }
 
-export const CategoryItem = ({ title, icon, onPress }: CategoryItemProps) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={onPress} activeOpacity={0.7}>
-        <View style={styles.categoryIcon}>
-            <MaterialCommunityIcons name={icon as any} size={24} color={COLORS.text} />
+export const CategoryItem = ({ title, icon, color = COLORS.primary, onPress }: CategoryItemProps) => (
+    <TouchableOpacity style={styles.categoryItem} onPress={onPress} activeOpacity={0.75}>
+        <View style={[styles.categoryIcon, { backgroundColor: color }]}>
+            <MaterialCommunityIcons name={icon as any} size={22} color="#FFFFFF" />
         </View>
         <Text style={styles.categoryTitle}>{title}</Text>
     </TouchableOpacity>
@@ -29,18 +29,14 @@ interface FeaturedCardProps {
 }
 
 export const FeaturedCard = ({ title, price, area, onPress }: FeaturedCardProps) => (
-    <TouchableOpacity style={styles.featuredCard} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.featuredCard} onPress={onPress} activeOpacity={0.85}>
         <View style={styles.cardImagePlaceholder}>
-            <MaterialCommunityIcons name="home-city-outline" size={36} color="#D1D5DB" />
+            <MaterialCommunityIcons name="home-city-outline" size={40} color="#C7C7CC" />
         </View>
         <View style={styles.cardContent}>
             <Text style={styles.cardTitle} numberOfLines={1}>{title}</Text>
-            <View style={styles.cardFooter}>
-                <Text style={styles.cardPrice}>{price}<Text style={styles.cardPriceSuffix}>/mo</Text></Text>
-                <View style={styles.cardAreaBadge}>
-                    <Text style={styles.cardArea}>{area}</Text>
-                </View>
-            </View>
+            <Text style={styles.cardArea}>{area}</Text>
+            <Text style={styles.cardPrice}>{price}<Text style={styles.cardPriceSuffix}>/mo</Text></Text>
         </View>
     </TouchableOpacity>
 );
@@ -53,15 +49,13 @@ interface JobMiniCardProps {
 }
 
 export const JobMiniCard = ({ title, company, salary, onPress }: JobMiniCardProps) => (
-    <TouchableOpacity style={styles.jobMiniCard} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.jobMiniCard} onPress={onPress} activeOpacity={0.85}>
         <View style={styles.jobIcon}>
-            <MaterialCommunityIcons name="briefcase-outline" size={20} color={COLORS.text} />
+            <MaterialCommunityIcons name="briefcase-outline" size={20} color={COLORS.primary} />
         </View>
         <Text style={styles.jobTitle} numberOfLines={2}>{title}</Text>
         <Text style={styles.jobCompany} numberOfLines={1}>{company}</Text>
-        <View style={styles.jobSalaryRow}>
-            <Text style={styles.jobSalary}>{salary}</Text>
-        </View>
+        <Text style={styles.jobSalary}>{salary}</Text>
     </TouchableOpacity>
 );
 
@@ -73,16 +67,16 @@ interface ActionCardProps {
     onPress: () => void;
 }
 
-export const ActionCard = ({ title, subtitle, icon, onPress }: ActionCardProps) => (
+export const ActionCard = ({ title, subtitle, icon, color = COLORS.primary, onPress }: ActionCardProps) => (
     <TouchableOpacity style={styles.actionCard} onPress={onPress} activeOpacity={0.8}>
-        <View style={styles.actionIcon}>
-            <MaterialCommunityIcons name={icon as any} size={22} color={COLORS.text} />
+        <View style={[styles.actionIcon, { backgroundColor: color }]}>
+            <MaterialCommunityIcons name={icon as any} size={20} color="#FFFFFF" />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
             <Text style={styles.actionCardTitle}>{title}</Text>
             <Text style={styles.actionCardSubtitle}>{subtitle}</Text>
         </View>
-        <MaterialCommunityIcons name="arrow-right" size={18} color={COLORS.textMuted} />
+        <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
     </TouchableOpacity>
 );
 
@@ -93,11 +87,9 @@ interface BigActionBtnProps {
     onPress: () => void;
 }
 
-export const BigActionBtn = ({ title, icon, onPress }: BigActionBtnProps) => (
-    <TouchableOpacity style={styles.bigActionBtn} onPress={onPress} activeOpacity={0.85}>
-        <View style={styles.bigActionIcon}>
-            <MaterialCommunityIcons name={icon as any} size={26} color={COLORS.text} />
-        </View>
+export const BigActionBtn = ({ title, icon, color = COLORS.primary, onPress }: BigActionBtnProps) => (
+    <TouchableOpacity style={[styles.bigActionBtn, { backgroundColor: color }]} onPress={onPress} activeOpacity={0.85}>
+        <MaterialCommunityIcons name={icon as any} size={28} color="#FFFFFF" />
         <Text style={styles.bigActionBtnText}>{title}</Text>
     </TouchableOpacity>
 );
@@ -109,9 +101,11 @@ interface StatCardProps {
     color?: string;
 }
 
-export const StatCard = ({ label, value, icon }: StatCardProps) => (
+export const StatCard = ({ label, value, icon, color = COLORS.primary }: StatCardProps) => (
     <View style={styles.statCard}>
-        <MaterialCommunityIcons name={icon as any} size={20} color={COLORS.accent} />
+        <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
+            <MaterialCommunityIcons name={icon as any} size={20} color={color} />
+        </View>
         <View style={{ marginLeft: 12 }}>
             <Text style={styles.statValue}>{value}</Text>
             <Text style={styles.statLabel}>{label}</Text>
@@ -123,77 +117,66 @@ const styles = StyleSheet.create({
     // Category
     categoryItem: { alignItems: 'center', flex: 1 },
     categoryIcon: {
-        width: 56, height: 56, borderRadius: 14,
-        backgroundColor: '#F3F4F6',
+        width: 58, height: 58, borderRadius: 18,
         alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-        borderWidth: 1, borderColor: '#E5E7EB',
+        ...SHADOWS.light,
     },
-    categoryTitle: { fontSize: 12, fontWeight: '600', color: COLORS.text, textAlign: 'center' },
+    categoryTitle: { fontSize: 12, fontWeight: '600', color: '#3C3C43', textAlign: 'center' },
 
     // Featured Card
     featuredCard: {
-        width: 210, backgroundColor: '#FFFFFF', borderRadius: 14,
-        borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden', ...SHADOWS.light
+        width: 200, backgroundColor: '#FFFFFF', borderRadius: 18,
+        overflow: 'hidden', ...SHADOWS.medium,
     },
     cardImagePlaceholder: {
-        width: '100%', height: 110,
-        backgroundColor: '#F9FAFB', alignItems: 'center', justifyContent: 'center',
+        width: '100%', height: 110, backgroundColor: '#F2F2F7',
+        alignItems: 'center', justifyContent: 'center',
     },
     cardContent: { padding: 12 },
-    cardTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 8 },
-    cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    cardPrice: { fontSize: 15, fontWeight: '800', color: COLORS.text },
-    cardPriceSuffix: { fontSize: 11, fontWeight: '500', color: COLORS.textMuted },
-    cardAreaBadge: {
-        backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-    },
-    cardArea: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600' },
+    cardTitle: { fontSize: 14, fontWeight: '600', color: '#000000', marginBottom: 3 },
+    cardArea: { fontSize: 12, color: '#8E8E93', marginBottom: 6 },
+    cardPrice: { fontSize: 16, fontWeight: '700', color: '#007AFF' },
+    cardPriceSuffix: { fontSize: 11, fontWeight: '400', color: '#8E8E93' },
 
-    // Job Mini Card
+    // Job Mini
     jobMiniCard: {
-        width: 170, backgroundColor: '#FFFFFF', padding: 14, borderRadius: 14,
-        borderWidth: 1, borderColor: '#E5E7EB', ...SHADOWS.light
+        width: 170, backgroundColor: '#FFFFFF', padding: 14, borderRadius: 18,
+        ...SHADOWS.medium,
     },
     jobIcon: {
-        width: 38, height: 38, borderRadius: 10,
-        backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+        width: 38, height: 38, borderRadius: 12,
+        backgroundColor: '#E5F0FF', alignItems: 'center', justifyContent: 'center', marginBottom: 10,
     },
-    jobTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, lineHeight: 20 },
-    jobCompany: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3 },
-    jobSalaryRow: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 },
-    jobSalary: { fontSize: 13, fontWeight: '800', color: COLORS.text },
+    jobTitle: { fontSize: 14, fontWeight: '600', color: '#000000', lineHeight: 20 },
+    jobCompany: { fontSize: 12, color: '#8E8E93', marginTop: 3 },
+    jobSalary: { fontSize: 14, fontWeight: '700', color: '#007AFF', marginTop: 10 },
 
     // Stat Card
     statCard: {
         flex: 1, flexDirection: 'row', backgroundColor: '#FFFFFF',
-        padding: 14, borderRadius: 12, borderWidth: 1,
-        borderColor: '#E5E7EB', alignItems: 'center', ...SHADOWS.light
+        padding: 14, borderRadius: 14, alignItems: 'center', ...SHADOWS.light,
     },
-    statValue: { fontSize: 18, fontWeight: '800', color: COLORS.text },
-    statLabel: { fontSize: 11, color: COLORS.textSecondary, fontWeight: '600', marginTop: 1 },
+    statIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    statValue: { fontSize: 18, fontWeight: '700', color: '#000000' },
+    statLabel: { fontSize: 11, color: '#8E8E93', fontWeight: '500', marginTop: 1 },
 
     // Big Action
     bigActionBtn: {
-        flex: 1, backgroundColor: '#F9FAFB', borderRadius: 14,
-        padding: 18, borderWidth: 1, borderColor: '#E5E7EB', ...SHADOWS.light,
+        flex: 1, borderRadius: 18, padding: 18,
+        alignItems: 'center', justifyContent: 'center', gap: 10,
+        ...SHADOWS.medium,
     },
-    bigActionIcon: {
-        width: 44, height: 44, borderRadius: 12,
-        backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center',
-        marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB',
-    },
-    bigActionBtnText: { color: COLORS.text, fontWeight: '700', fontSize: 14, lineHeight: 20 },
+    bigActionBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14, textAlign: 'center' },
 
     // Action Card
     actionCard: {
         flexDirection: 'row', alignItems: 'center', padding: 16,
-        backgroundColor: '#FFFFFF', borderRadius: 12,
-        borderWidth: 1, borderColor: '#E5E7EB', ...SHADOWS.light
+        backgroundColor: '#FFFFFF', borderRadius: 14, ...SHADOWS.light,
     },
     actionIcon: {
-        width: 42, height: 42, borderRadius: 10,
-        backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center',
+        width: 40, height: 40, borderRadius: 12,
+        alignItems: 'center', justifyContent: 'center',
     },
-    actionCardTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text },
-    actionCardSubtitle: { fontSize: 12, color: COLORS.textSecondary, marginTop: 1 },
+    actionCardTitle: { fontSize: 15, fontWeight: '600', color: '#000000' },
+    actionCardSubtitle: { fontSize: 12, color: '#8E8E93', marginTop: 1 },
 });

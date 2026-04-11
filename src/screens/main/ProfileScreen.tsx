@@ -6,23 +6,16 @@ import {
     TouchableOpacity,
     ScrollView,
     Alert,
-    Platform
+    Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { AppTextInput } from '../../components/AppTextInput';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { UserRole, MainTabScreenProps } from '../../types';
 import { useTranslation } from 'react-i18next';
-import { AIInsights } from '../../components/AIInsights';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
-const LANGUAGES = [
-    { code: 'en', label: 'English', icon: 'alphabetical' },
-    { code: 'hi', label: 'हिंदी', icon: 'translate' },
-    { code: 'mr', label: 'मराठी', icon: 'script-text' },
-];
 
 export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigation }) => {
     const { t, i18n } = useTranslation();
@@ -31,357 +24,397 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
     const [name, setName] = useState(user?.name || '');
     const [selectedArea, setSelectedArea] = useState(user?.area || 'Phase 1');
     const [loading, setLoading] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
     const handleUpdate = async () => {
         try {
             setLoading(true);
             await completeProfile({ name, area: selectedArea });
             setIsEditing(false);
-            Alert.alert(t('success'), t('profile_updated'));
-        } catch (error) {
-            Alert.alert(t('error'), t('update_failed'));
+            Alert.alert('Success', 'Profile updated');
+        } catch {
+            Alert.alert('Error', 'Update failed, try again');
         } finally {
             setLoading(false);
         }
     };
 
     const handleSwitchRole = (newRole: UserRole) => {
-        Alert.alert(
-            t('mode_role'),
-            t('mode_subtitle'),
-            [
-                { text: t('cancel'), style: 'cancel' },
-                {
-                    text: t('continue'),
-                    onPress: () => {
-                        setRole(newRole);
-                    }
-                }
-            ]
-        );
+        Alert.alert('Switch Mode', 'Change your role on the platform?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Switch', onPress: () => setRole(newRole) },
+        ]);
     };
 
-    const changeLanguage = (code: string) => {
-        i18n.changeLanguage(code);
-    };
+    const roleLabel = user?.role === 'employer' ? 'Employer' : user?.role === 'worker' ? 'Worker' : 'Seeker';
+    const initial = user?.name?.charAt(0).toUpperCase() || 'U';
 
     return (
-        <View style={styles.container}>
-            <SafeAreaView edges={['top']} style={styles.headerBand}>
-                <View style={styles.headerContent}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarChar}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
-                    </View>
-                    <View style={styles.headerText}>
-                        <Text style={styles.userName} numberOfLines={1}>{user?.name}</Text>
-                        <Text style={styles.userSub} numberOfLines={1}>{user?.email || 'Hinjewadi Connect'}</Text>
-                    </View>
-                </View>
-            </SafeAreaView>
+        <View style={styles.root}>
+            <SafeAreaView edges={['top']} style={styles.safeTop} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-            <ScrollView 
-                style={styles.content}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                {/* AI Insights Card */}
-                <AIInsights />
-
-                {/* Account Settings Card */}
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>{t('account_settings')}</Text>
-                        <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
-                            <Text style={styles.editAction}>{isEditing ? t('cancel') : t('edit')}</Text>
+                {/* ── Hero Avatar Block ── */}
+                <View style={styles.heroBlock}>
+                    <View style={styles.avatarRing}>
+                        <View style={styles.avatarCircle}>
+                            <Text style={styles.avatarInitial}>{initial}</Text>
+                        </View>
+                    </View>
+                    <Text style={styles.heroName}>{user?.name || 'Your Name'}</Text>
+                    <View style={styles.heroPillRow}>
+                        <View style={styles.heroPill}>
+                            <MaterialCommunityIcons name="map-marker" size={12} color="#007AFF" />
+                            <Text style={styles.heroPillText}>{user?.area || 'Hinjewadi'}</Text>
+                        </View>
+                        <View style={[styles.heroPill, styles.heroPillRole]}>
+                            <Text style={styles.heroPillRoleText}>{roleLabel}</Text>
+                        </View>
+                    </View>
+                    {!isEditing && (
+                        <TouchableOpacity style={styles.heroEditBtn} onPress={() => setIsEditing(true)}>
+                            <Text style={styles.heroEditBtnText}>Edit Profile</Text>
                         </TouchableOpacity>
-                    </View>
+                    )}
+                </View>
 
-                    {isEditing ? (
-                        <View style={styles.form}>
+                {/* ── Edit Form ── */}
+                {isEditing && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionLabel}>EDIT PROFILE</Text>
+                        <View style={styles.card}>
                             <AppTextInput
-                                label={t('name')}
+                                label="Name"
                                 value={name}
                                 onChangeText={setName}
-                                placeholder={t('name_placeholder')}
+                                placeholder="Your name"
                             />
-                            <Text style={styles.label}>{t('area')}</Text>
-                            <View style={styles.areaGrid}>
+                            <Text style={styles.fieldLabel}>Area</Text>
+                            <View style={styles.areaRow}>
                                 {AREAS.map(area => (
                                     <TouchableOpacity
                                         key={area}
                                         style={[styles.areaChip, selectedArea === area && styles.areaChipActive]}
                                         onPress={() => setSelectedArea(area)}
                                     >
-                                        <Text style={[styles.areaText, selectedArea === area && styles.areaTextActive]}>{area}</Text>
+                                        <Text style={[styles.areaChipText, selectedArea === area && styles.areaChipTextActive]}>
+                                            {area}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
-                            <TouchableOpacity 
-                                style={styles.saveBtn} 
-                                onPress={handleUpdate}
-                                disabled={loading}
-                            >
-                                <Text style={styles.saveBtnText}>{loading ? t('save') + '...' : t('save_changes')}</Text>
-                            </TouchableOpacity>
+                            <View style={styles.editBtnRow}>
+                                <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsEditing(false)}>
+                                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate} disabled={loading}>
+                                    <Text style={styles.saveBtnText}>{loading ? 'Saving…' : 'Save'}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    ) : (
-                        <View style={styles.infoGrid}>
-                            <InfoTile 
-                                icon="map-marker" 
-                                label={t('location')} 
-                                value={user?.area || 'Not Set'} 
-                                color="#4F46E5"
-                            />
-                            <InfoTile 
-                                icon="shield-account" 
-                                label={t('status')} 
-                                value={t('verified')} 
-                                color="#10B981"
-                            />
-                        </View>
-                    )}
-                </View>
+                    </View>
+                )}
 
-                {/* Mode Switcher */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>{t('mode_role')}</Text>
-                    <Text style={styles.sectionSubtitle}>{t('mode_subtitle')}</Text>
-                </View>
-
-                <View style={styles.roleGrid}>
-                    <RoleCard
-                        active={user?.role === 'tenant'}
-                        label={t('seeker')}
-                        subtitle={t('seeker_subtitle')}
-                        icon="account-search"
-                        onPress={() => handleSwitchRole('tenant')}
-                        color="#4F46E5"
-                    />
-                    <RoleCard
-                        active={user?.role === 'worker'}
-                        label={t('provider')}
-                        subtitle={t('provider_subtitle')}
-                        icon="briefcase-check"
-                        onPress={() => handleSwitchRole('worker')}
-                        color="#10B981"
-                    />
-                    <RoleCard
-                        active={user?.role === 'employer'}
-                        label={t('hiring')}
-                        subtitle={t('hiring_subtitle')}
-                        icon="office-building-marker"
-                        onPress={() => handleSwitchRole('employer')}
-                        color="#F59E0B"
-                    />
-                </View>
-
-                {/* Language Picker */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>{t('language')}</Text>
-                </View>
-                <View style={styles.languageContainer}>
-                    {LANGUAGES.map((lang) => (
-                        <TouchableOpacity
-                            key={lang.code}
-                            style={[
-                                styles.languageBtn,
-                                i18n.language === lang.code && styles.languageBtnActive
-                            ]}
-                            onPress={() => changeLanguage(lang.code)}
-                        >
-                            <MaterialCommunityIcons 
-                                name={lang.icon as any} 
-                                size={18} 
-                                color={i18n.language === lang.code ? '#4F46E5' : '#64748B'} 
-                            />
-                            <Text style={[
-                                styles.languageLabel,
-                                i18n.language === lang.code && styles.languageLabelActive
-                            ]}>
-                                {lang.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {/* Quick Actions */}
-                <View style={styles.actionsContainer}>
-                    {user?.role === 'worker' && (
-                        <ActionRow
-                            icon="account-tie"
-                            title={t('professional_profile')}
-                            subtitle="Update skills, rates & availability"
-                            onPress={() => navigation.navigate('CreateServiceProfile')}
-                            color="#4F46E5"
+                {/* ── Account Section ── */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>ACCOUNT</Text>
+                    <View style={styles.card}>
+                        <SettingsRow
+                            icon="account-outline" iconBg="#007AFF"
+                            label="Full Name" value={user?.name || '—'}
+                            onPress={() => setIsEditing(true)}
                         />
-                    )}
-                    {user?.role === 'employer' && (
-                        <>
-                            <ActionRow
-                                icon="plus-circle"
-                                title={t('post_listing')}
-                                subtitle="Add a property or job vacancy"
-                                onPress={() => navigation.navigate('PostListing')}
-                                color="#4F46E5"
-                            />
-                            <ActionRow
-                                icon="clipboard-list"
-                                title={t('manage_postings')}
-                                subtitle="Edit or remove your live ads"
-                                onPress={() => navigation.navigate('ManagePosts')}
-                                color="#6366F1"
-                            />
-                        </>
-                    )}
-                    
-                    <ActionRow
-                        icon="bell-ring"
-                        title={t('notifications')}
-                        subtitle="Alerts for jobs & messages"
-                        onPress={() => {}}
-                        color="#8B5CF6"
-                    />
-                    
-                    <ActionRow
-                        icon="shield-check"
-                        title="Legal & Privacy"
-                        subtitle="Terms of Service"
-                        onPress={() => (navigation as any).navigate('Legal')}
-                        color="#4F46E5"
-                    />
-                    
-                    <ActionRow
-                        icon="help-circle"
-                        title={t('help_support')}
-                        subtitle="Common issues & contact"
-                        onPress={() => (navigation as any).navigate('HelpSupport')}
-                        color="#64748B"
-                    />
+                        <Separator />
+                        <SettingsRow
+                            icon="map-marker-outline" iconBg="#34C759"
+                            label="Location" value={user?.area || '—'}
+                            onPress={() => setIsEditing(true)}
+                        />
+                        <Separator />
+                        <SettingsRow
+                            icon="shield-check-outline" iconBg="#5856D6"
+                            label="Account Status" value="Verified"
+                        />
+                    </View>
                 </View>
 
-                <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-                    <MaterialCommunityIcons name="logout" size={20} color="#DC2626" />
-                    <Text style={styles.logoutText}>{t('logout')}</Text>
-                </TouchableOpacity>
+                {/* ── Role Section ── */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>ACTIVE MODE</Text>
+                    <View style={styles.card}>
+                        <RoleRow
+                            label="Looking for Room / Job"
+                            iconBg="#007AFF" icon="account-search-outline"
+                            active={user?.role === 'tenant'}
+                            onPress={() => handleSwitchRole('tenant')}
+                        />
+                        <Separator />
+                        <RoleRow
+                            label="Offering Services / Work"
+                            iconBg="#34C759" icon="briefcase-outline"
+                            active={user?.role === 'worker'}
+                            onPress={() => handleSwitchRole('worker')}
+                        />
+                        <Separator />
+                        <RoleRow
+                            label="Hiring / Posting Listings"
+                            iconBg="#FF9500" icon="office-building-outline"
+                            active={user?.role === 'employer'}
+                            onPress={() => handleSwitchRole('employer')}
+                        />
+                    </View>
+                </View>
 
-                <Text style={styles.versionText}>Hinjewadi Connect v1.2.5 • AI Enabled</Text>
+                {/* ── Language ── */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>LANGUAGE</Text>
+                    <View style={styles.card}>
+                        {[
+                            { code: 'en', label: 'English' },
+                            { code: 'hi', label: 'हिंदी' },
+                            { code: 'mr', label: 'मराठी' },
+                        ].map((lang, idx, arr) => (
+                            <React.Fragment key={lang.code}>
+                                <TouchableOpacity
+                                    style={styles.settingsRow}
+                                    onPress={() => i18n.changeLanguage(lang.code)}
+                                >
+                                    <Text style={styles.rowLabel}>{lang.label}</Text>
+                                    {i18n.language === lang.code && (
+                                        <MaterialCommunityIcons name="check" size={18} color="#007AFF" />
+                                    )}
+                                </TouchableOpacity>
+                                {idx < arr.length - 1 && <Separator />}
+                            </React.Fragment>
+                        ))}
+                    </View>
+                </View>
+
+                {/* ── More Section ── */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>MORE</Text>
+                    <View style={styles.card}>
+                        <SettingsRow
+                            icon="bell-outline" iconBg="#FF3B30"
+                            label="Notifications"
+                            trailing={
+                                <Switch
+                                    value={notificationsEnabled}
+                                    onValueChange={setNotificationsEnabled}
+                                    trackColor={{ true: '#34C759', false: '#E5E5EA' }}
+                                    thumbColor="#FFFFFF"
+                                />
+                            }
+                        />
+                        <Separator />
+                        {user?.role === 'worker' && (
+                            <>
+                                <SettingsRow
+                                    icon="account-tie-outline" iconBg="#5856D6"
+                                    label="Professional Profile"
+                                    onPress={() => navigation.navigate('CreateServiceProfile')}
+                                />
+                                <Separator />
+                            </>
+                        )}
+                        {user?.role === 'employer' && (
+                            <>
+                                <SettingsRow
+                                    icon="plus-circle-outline" iconBg="#007AFF"
+                                    label="Post New Listing"
+                                    onPress={() => navigation.navigate('PostListing')}
+                                />
+                                <Separator />
+                                <SettingsRow
+                                    icon="clipboard-list-outline" iconBg="#5856D6"
+                                    label="Manage My Posts"
+                                    onPress={() => navigation.navigate('ManagePosts')}
+                                />
+                                <Separator />
+                            </>
+                        )}
+                        <SettingsRow
+                            icon="shield-check-outline" iconBg="#34C759"
+                            label="Legal & Privacy"
+                            onPress={() => (navigation as any).navigate('Legal')}
+                        />
+                        <Separator />
+                        <SettingsRow
+                            icon="help-circle-outline" iconBg="#8E8E93"
+                            label="Help & Support"
+                            onPress={() => (navigation as any).navigate('HelpSupport')}
+                        />
+                    </View>
+                </View>
+
+                {/* ── Logout ── */}
+                <View style={styles.section}>
+                    <View style={styles.card}>
+                        <TouchableOpacity style={styles.settingsRow} onPress={logout}>
+                            <Text style={styles.logoutText}>Sign Out</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <Text style={styles.versionText}>Hinjewadi Connect v1.2.5</Text>
+                <View style={{ height: 32 }} />
             </ScrollView>
         </View>
     );
 };
 
-const InfoTile = ({ icon, label, value, color }: any) => (
-    <View style={styles.infoTile}>
-        <View style={[styles.tileIcon, { backgroundColor: color + '15' }]}>
-            <MaterialCommunityIcons name={icon} size={20} color={color} />
-        </View>
-        <View>
-            <Text style={styles.tileLabel}>{label}</Text>
-            <Text style={styles.tileValue}>{value}</Text>
-        </View>
-    </View>
-);
+// ─── Sub-Components ──────────────────────────────────────────
 
-const RoleCard = ({ active, label, subtitle, icon, onPress, color }: any) => (
+const Separator = () => <View style={styles.separator} />;
+
+const SettingsRow = ({
+    icon, iconBg, label, value, onPress, trailing
+}: {
+    icon: any; iconBg: string; label: string;
+    value?: string; onPress?: () => void; trailing?: React.ReactNode;
+}) => (
     <TouchableOpacity
-        style={[styles.roleCard, active && { borderColor: color, backgroundColor: color + '05' }]}
+        style={styles.settingsRow}
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={onPress ? 0.6 : 1}
+        disabled={!onPress && !trailing}
     >
-        <View style={[styles.roleIcon, { backgroundColor: active ? color : '#F1F5F9' }]}>
-            <MaterialCommunityIcons name={icon} size={24} color={active ? '#FFFFFF' : '#64748B'} />
+        <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
+            <MaterialCommunityIcons name={icon} size={17} color="#FFFFFF" />
         </View>
-        <Text style={[styles.roleLabel, active && { color: color }]}>{label}</Text>
-        <Text style={styles.roleSub}>{subtitle}</Text>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowRight}>
+            {value && <Text style={styles.rowValue}>{value}</Text>}
+            {trailing}
+            {onPress && !trailing && (
+                <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
+            )}
+        </View>
     </TouchableOpacity>
 );
 
-const ActionRow = ({ icon, title, subtitle, onPress, color }: any) => (
-    <TouchableOpacity style={styles.actionRow} onPress={onPress}>
-        <View style={[styles.actionIcon, { backgroundColor: color + '10' }]}>
-            <MaterialCommunityIcons name={icon} size={22} color={color} />
+const RoleRow = ({
+    label, icon, iconBg, active, onPress
+}: {
+    label: string; icon: any; iconBg: string; active: boolean; onPress: () => void;
+}) => (
+    <TouchableOpacity style={styles.settingsRow} onPress={onPress} activeOpacity={0.6}>
+        <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
+            <MaterialCommunityIcons name={icon} size={17} color="#FFFFFF" />
         </View>
-        <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>{title}</Text>
-            <Text style={styles.actionSub}>{subtitle}</Text>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowRight}>
+            {active ? (
+                <MaterialCommunityIcons name="check-circle" size={20} color="#007AFF" />
+            ) : (
+                <MaterialCommunityIcons name="chevron-right" size={18} color="#C7C7CC" />
+            )}
         </View>
-        <MaterialCommunityIcons name="chevron-right" size={20} color="#CBD5E1" />
     </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F9FAFB' },
-    headerBand: {
-        backgroundColor: '#FFFFFF',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
+    root: { flex: 1, backgroundColor: '#F2F2F7' },
+    safeTop: { backgroundColor: '#F2F2F7' },
+    scroll: { paddingTop: 0 },
+
+    // Hero
+    heroBlock: {
+        alignItems: 'center',
+        paddingTop: 28,
+        paddingBottom: 28,
+        backgroundColor: '#F2F2F7',
     },
-    headerContent: {
+    avatarRing: {
+        width: 92, height: 92, borderRadius: 46,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center', justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 12,
+        elevation: 6,
+        marginBottom: 14,
+    },
+    avatarCircle: {
+        width: 80, height: 80, borderRadius: 40,
+        backgroundColor: '#007AFF',
+        alignItems: 'center', justifyContent: 'center',
+    },
+    avatarInitial: { fontSize: 34, fontWeight: '700', color: '#FFFFFF' },
+    heroName: { fontSize: 24, fontWeight: '700', color: '#000000', letterSpacing: -0.5 },
+    heroPillRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+    heroPill: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: '#E5F0FF', paddingHorizontal: 12, paddingVertical: 5,
+        borderRadius: 20,
+    },
+    heroPillText: { fontSize: 12, color: '#007AFF', fontWeight: '600' },
+    heroPillRole: { backgroundColor: '#E5E5EA' },
+    heroPillRoleText: { fontSize: 12, color: '#6B6B73', fontWeight: '600' },
+    heroEditBtn: {
+        marginTop: 14,
+        paddingHorizontal: 28, paddingVertical: 10,
+        backgroundColor: '#007AFF', borderRadius: 22,
+    },
+    heroEditBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+
+    // Sections
+    section: { marginTop: 28, paddingHorizontal: 16 },
+    sectionLabel: {
+        fontSize: 12, fontWeight: '600', color: '#8E8E93',
+        letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
+    },
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 14,
+        overflow: 'hidden',
+    },
+    separator: {
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: '#E5E5EA',
+        marginLeft: 56,
+    },
+    settingsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 12,
-        gap: 12,
+        paddingVertical: 13,
+        paddingHorizontal: 16,
+        minHeight: 52,
     },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 12,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        flexShrink: 0,
+    rowIcon: {
+        width: 30, height: 30, borderRadius: 8,
+        alignItems: 'center', justifyContent: 'center',
+        marginRight: 14,
     },
-    avatarChar: { fontSize: 20, fontWeight: '900', color: COLORS.text },
-    editAvatarBtn: { display: 'none' },
-    headerText: { flex: 1, minWidth: 0 },
-    userName: { fontSize: 17, fontWeight: '800', color: COLORS.text },
-    userSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-    content: { flex: 1 },
-    scrollContent: { padding: 20, paddingBottom: 40 },
-    card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, ...SHADOWS.light, marginBottom: 16, borderWidth: 1, borderColor: '#E5E7EB' },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    cardTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-    editAction: { fontSize: 14, fontWeight: '600', color: COLORS.accent },
-    infoGrid: { flexDirection: 'row', gap: 16 },
-    infoTile: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-    tileIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    tileLabel: { fontSize: 11, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase' },
-    tileValue: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-    form: { gap: 12 },
-    label: { fontSize: 14, fontWeight: '800', color: '#1E293B', marginBottom: -4 },
-    areaGrid: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-    areaChip: { flex: 1, paddingVertical: 10, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1.5, borderColor: 'transparent' },
-    areaChipActive: { backgroundColor: '#4F46E510', borderColor: '#4F46E5' },
-    areaText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
-    areaTextActive: { color: '#4F46E5' },
-    saveBtn: { backgroundColor: '#4F46E5', paddingVertical: 14, borderRadius: 16, alignItems: 'center', marginTop: 8 },
-    saveBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
-    sectionHeader: { marginBottom: 16 },
-    sectionTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
-    sectionSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
-    roleGrid: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-    roleCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1.5, borderColor: '#E5E7EB' },
-    roleIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    roleLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text },
-    roleSub: { fontSize: 10, color: COLORS.textMuted, fontWeight: '500', marginTop: 2, textAlign: 'center' },
-    languageContainer: { flexDirection: 'row', gap: 12, marginBottom: 30 },
-    languageBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1.5, borderColor: '#F1F5F9' },
-    languageBtnActive: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-    languageLabel: { fontSize: 14, fontWeight: '700', color: '#64748B' },
-    languageLabelActive: { color: '#4F46E5' },
-    actionsContainer: { gap: 12, marginBottom: 30 },
-    actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 12, borderWidth: 1, borderColor: '#F1F5F9' },
-    actionIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    actionContent: { flex: 1, marginLeft: 16 },
-    actionTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-    actionSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
-    logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 16, borderWidth: 1.5, borderColor: '#FEE2E2', backgroundColor: '#FFFFFF', gap: 8 },
-    logoutText: { fontSize: 15, fontWeight: '800', color: '#DC2626' },
-    versionText: { fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 24, fontWeight: '600' },
+    rowLabel: { flex: 1, fontSize: 16, color: '#000000', fontWeight: '400' },
+    rowRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    rowValue: { fontSize: 15, color: '#8E8E93' },
+
+    // Edit form
+    fieldLabel: { fontSize: 14, fontWeight: '600', color: '#000000', marginBottom: 8, marginTop: 4 },
+    areaRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+    areaChip: {
+        flex: 1, paddingVertical: 9, borderRadius: 10,
+        backgroundColor: '#F2F2F7', alignItems: 'center',
+        borderWidth: 1, borderColor: '#E5E5EA',
+    },
+    areaChipActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+    areaChipText: { fontSize: 13, fontWeight: '600', color: '#6B6B73' },
+    areaChipTextActive: { color: '#FFFFFF' },
+    editBtnRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+    cancelBtn: {
+        flex: 1, paddingVertical: 13, backgroundColor: '#F2F2F7',
+        borderRadius: 12, alignItems: 'center',
+    },
+    cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#8E8E93' },
+    saveBtn: {
+        flex: 2, paddingVertical: 13, backgroundColor: '#007AFF',
+        borderRadius: 12, alignItems: 'center',
+    },
+    saveBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+
+    // Logout & misc
+    logoutText: { fontSize: 16, color: '#FF3B30', fontWeight: '400', textAlign: 'center', flex: 1 },
+    versionText: { fontSize: 12, color: '#C7C7CC', textAlign: 'center', marginTop: 20 },
 });
-
-

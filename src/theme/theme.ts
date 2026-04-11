@@ -1,25 +1,27 @@
-// Refined design system — clean white, single teal accent, Image 1 style
+// Apple iOS design system
 export const COLORS = {
-    primary: '#0891B2',       // Teal — single accent (Image 1 reference)
-    secondary: '#0E7490',     // Deeper teal
-    accent: '#6B7280',        // Mid grey
-    background: '#FFFFFF',
-    surface: '#F9FAFB',
-    surfaceAlt: '#F3F4F6',
-    text: '#111827',
-    textSecondary: '#6B7280',
-    textMuted: '#9CA3AF',
-    border: '#E5E7EB',
-    borderLight: '#F3F4F6',
-    error: '#EF4444',
-    success: '#059669',
+    primary: '#007AFF',        // iOS system blue
+    secondary: '#5856D6',      // iOS indigo
+    accent: '#34C759',         // iOS green
+    background: '#F2F2F7',     // iOS system grey background
+    surface: '#FFFFFF',
+    surfaceAlt: '#F2F2F7',
+    text: '#000000',
+    textSecondary: '#8E8E93',   // iOS secondary label
+    textMuted: '#C7C7CC',       // iOS tertiary label
+    border: '#C6C6C8',          // iOS separator
+    borderLight: '#E5E5EA',     // iOS opaque separator
+    error: '#FF3B30',           // iOS red
+    success: '#34C759',         // iOS green
+    warning: '#FF9500',         // iOS orange
     white: '#FFFFFF',
     black: '#000000',
-    phase1: '#0891B2',
-    phase2: '#0E7490',
-    phase3: '#164E63',
+    phase1: '#007AFF',
+    phase2: '#5856D6',
+    phase3: '#AF52DE',
     card: '#FFFFFF',
-    input: '#F9FAFB',
+    input: '#FFFFFF',
+    destructive: '#FF3B30',
 };
 
 export const FONTS = {
@@ -42,10 +44,10 @@ export const SPACING = {
 };
 
 export const BORDER_RADIUS = {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
+    xs: 6,
+    sm: 10,
+    md: 14,
+    lg: 18,
     xl: 24,
     full: 9999,
 };
@@ -54,23 +56,23 @@ export const SHADOWS = {
     none: { elevation: 0, shadowOpacity: 0 },
     light: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
         elevation: 2,
     },
     medium: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.08,
-        shadowRadius: 12,
+        shadowRadius: 16,
         elevation: 4,
     },
     premium: {
-        shadowColor: '#0891B2',
+        shadowColor: '#007AFF',
         shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
+        shadowOpacity: 0.18,
+        shadowRadius: 20,
         elevation: 6,
     },
     soft: {

@@ -64,10 +64,10 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
 
             {/* Category Grid - Dynamic & Clean */}
             <View style={styles.categoryGrid}>
-                <CategoryItem title={t('rooms')} icon="home-variant" onPress={() => navigation.navigate('Rooms')} />
-                <CategoryItem title={t('jobs')} icon="briefcase" onPress={() => navigation.navigate('Jobs')} />
-                <CategoryItem title={t('services')} icon="account-group" onPress={() => navigation.navigate('Services')} />
-                <CategoryItem title={t('post')} icon="plus-thick" onPress={() => navigation.navigate('PostListing')} />
+                <CategoryItem title={t('rooms')} icon="home-variant" color="#007AFF" onPress={() => navigation.navigate('Rooms')} />
+                <CategoryItem title={t('jobs')} icon="briefcase" color="#34C759" onPress={() => navigation.navigate('Jobs')} />
+                <CategoryItem title={t('services')} icon="account-group" color="#FF9500" onPress={() => navigation.navigate('Services')} />
+                <CategoryItem title={t('post')} icon="plus-thick" color="#AF52DE" onPress={() => navigation.navigate('PostListing')} />
             </View>
 
             {/* Live Rooms Section */}
@@ -145,8 +145,8 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             </View>
 
             <View style={styles.actionGrid}>
-                <BigActionBtn title="Post New Listing" icon="plus-circle" onPress={() => navigation.navigate('PostListing')} />
-                <BigActionBtn title="View My Posts" icon="clipboard-list" onPress={() => navigation.navigate('ManagePosts')} />
+                <BigActionBtn title="Post New Listing" icon="plus-circle" color="#007AFF" onPress={() => navigation.navigate('PostListing')} />
+                <BigActionBtn title="View My Posts" icon="clipboard-list" color="#5856D6" onPress={() => navigation.navigate('ManagePosts')} />
             </View>
         </View>
     );
@@ -169,8 +169,8 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             </View>
 
             <View style={styles.quickActions}>
-                <ActionCard title="Find Jobs" subtitle="Browse local openings" icon="magnify" onPress={() => navigation.navigate('Jobs')} />
-                <ActionCard title="My Profile" subtitle="See profile visits" icon="chart-line" onPress={() => navigation.navigate('Profile')} />
+                <ActionCard title="Find Jobs" subtitle="Browse local openings" icon="magnify" color="#007AFF" onPress={() => navigation.navigate('Jobs')} />
+                <ActionCard title="My Profile" subtitle="See profile visits" icon="chart-line" color="#34C759" onPress={() => navigation.navigate('Profile')} />
             </View>
         </View>
     );
@@ -215,8 +215,8 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
 
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
+    container: { flex: 1, backgroundColor: '#F2F2F7' },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F2F7' },
     loadingText: { marginTop: 16, color: COLORS.textSecondary, fontWeight: '600' },
     header: {
         flexDirection: 'row',

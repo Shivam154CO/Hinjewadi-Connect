@@ -84,12 +84,14 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         backgroundColor: '#FFFFFF',
-        borderRadius: 12,
+        borderRadius: 18,
         marginBottom: 14,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        ...SHADOWS.light,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 3,
     },
     imageWrap: {
         width: 120,
@@ -104,8 +106,8 @@ const styles = StyleSheet.create({
     },
     typePill: {
         position: 'absolute', bottom: 8, left: 8,
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
     },
     typeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
 
@@ -136,8 +138,8 @@ const styles = StyleSheet.create({
     locationText: { fontSize: 11, color: '#6B7280', fontWeight: '500' },
     price: {
         fontSize: 16,
-        fontWeight: '800',
-        color: COLORS.primary,
+        fontWeight: '700',
+        color: '#007AFF',
         marginTop: 6,
     },
     priceUnit: { fontSize: 11, fontWeight: '400', color: '#9CA3AF' },
