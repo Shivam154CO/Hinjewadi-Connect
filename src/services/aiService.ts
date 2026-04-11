@@ -36,16 +36,15 @@ class AIService {
                 body: { prompt, temperature: 0.6 }
             });
 
-            if (error) throw new Error("Backend connection failed");
-            
+            if (error) return this.getFallbackInsights(jobs, rooms);
+
             const rawText = data.candidates[0].content.parts[0].text;
             const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
             const aiData: AIInsight[] = JSON.parse(cleanJson);
-            
+
             return aiData;
 
-        } catch (error) {
-            console.error('Real AI Insights Error:', error);
+        } catch {
             return this.getFallbackInsights([], []);
         }
     }

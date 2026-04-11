@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { aiService } from '../../services/aiService';
 import { COLORS, SHADOWS } from '../../theme/theme';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 
 interface Props {
     skills: string[];
@@ -14,6 +13,7 @@ export const AIJobMatchCard = ({ skills, jobDescription }: Props) => {
     const [score, setScore] = useState<number | null>(null);
     const [feedback, setFeedback] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     const handleAnalyze = async () => {
         setLoading(true);
@@ -21,6 +21,11 @@ export const AIJobMatchCard = ({ skills, jobDescription }: Props) => {
         setScore(result.score);
         setFeedback(result.feedback);
         setLoading(false);
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+        }).start();
     };
 
     if (score === null && !loading) {
@@ -44,7 +49,7 @@ export const AIJobMatchCard = ({ skills, jobDescription }: Props) => {
     const getColor = (s: number) => s > 75 ? '#10B981' : s > 50 ? '#F59E0B' : '#EF4444';
 
     return (
-        <Animated.View entering={FadeInUp} style={[styles.card, { borderColor: getColor(score!) + '30' }]}>
+        <Animated.View style={[styles.card, { borderColor: getColor(score!) + '30', opacity: fadeAnim }]}>
             <View style={styles.header}>
                 <View style={[styles.scoreCircle, { backgroundColor: getColor(score!) + '15' }]}>
                     <Text style={[styles.scoreText, { color: getColor(score!) }]}>{score}%</Text>

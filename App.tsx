@@ -20,7 +20,6 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
 import './src/utils/i18n';
-import { NetworkBanner } from './src/components/NetworkBanner';
 import { MaintenanceBlocker } from './src/components/MaintenanceBlocker';
 import { ForceUpdateBlocker } from './src/components/ForceUpdateBlocker';
 import { appConfigService } from './src/services/appConfigService';
@@ -85,7 +84,6 @@ export default function App() {
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <ErrorBoundary>
-                <NetworkBanner />
                 <QueryProvider>
                     <SafeAreaProvider>
                         <AuthProvider>
