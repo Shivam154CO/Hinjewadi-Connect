@@ -1,15 +1,8 @@
+// Dark mode JobCard
 import React from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Platform
-} from 'react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../theme/theme';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Job } from '../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { executeContact } from '../utils/contactUtils';
 import { jobService } from '../services/jobService';
 
@@ -22,188 +15,92 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onPress }) => {
     const handleCall = () => {
         jobService.incrementLeads(job.id).catch(() => { });
         executeContact('call', {
-            name: job.company,
-            phone: job.contactPhone,
-            context: 'job',
-            contextTitle: job.title,
-            contextCompany: job.company,
+            name: job.company, phone: job.contactPhone,
+            context: 'job', contextTitle: job.title, contextCompany: job.company,
         });
     };
 
     return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={onPress}
-            activeOpacity={0.95}
-        >
-            <View style={styles.header}>
-                <View style={styles.iconContainer}>
-                    <MaterialCommunityIcons name="briefcase-variant" size={28} color="#4F46E5" />
+        <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.85}>
+            <View style={s.header}>
+                <View style={s.iconBox}>
+                    <MaterialCommunityIcons name="briefcase-variant" size={22} color="#00C896" />
                 </View>
-                <View style={styles.titleContent}>
-                    <View style={styles.titleRow}>
-                        <Text style={styles.title} numberOfLines={1}>{job.title}</Text>
-                        {job.urgent && (
-                            <View style={styles.urgentBadge}>
-                                <Text style={styles.urgentText}>URGENT</Text>
-                            </View>
-                        )}
+                <View style={s.titleBlock}>
+                    <View style={s.titleRow}>
+                        <Text style={s.title} numberOfLines={1}>{job.title}</Text>
+                        {job.urgent && <View style={s.urgentTag}><Text style={s.urgentText}>URGENT</Text></View>}
                     </View>
-                    <Text style={styles.company} numberOfLines={1}>{job.company}</Text>
+                    <Text style={s.company} numberOfLines={1}>{job.company}</Text>
                 </View>
             </View>
 
-            <View style={styles.detailsGrid}>
-                <View style={styles.detailItem}>
-                    <MaterialCommunityIcons name="map-marker-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{job.area}</Text>
+            <View style={s.detailRow}>
+                <View style={s.detailItem}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={12} color="#636366" />
+                    <Text style={s.detailText}>{job.area}</Text>
                 </View>
-                <View style={styles.detailItem}>
-                    <MaterialCommunityIcons name="clock-outline" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{job.type}</Text>
+                <View style={s.detailDot} />
+                <View style={s.detailItem}>
+                    <MaterialCommunityIcons name="clock-outline" size={12} color="#636366" />
+                    <Text style={s.detailText}>{job.type}</Text>
                 </View>
-                <View style={styles.detailItem}>
-                    <MaterialCommunityIcons name="history" size={14} color="#64748B" />
-                    <Text style={styles.detailText}>{job.postedAgo}</Text>
+                <View style={s.detailDot} />
+                <View style={s.detailItem}>
+                    <MaterialCommunityIcons name="history" size={12} color="#636366" />
+                    <Text style={s.detailText}>{job.postedAgo}</Text>
                 </View>
             </View>
 
-            <View style={styles.footer}>
-                <View style={styles.salaryContainer}>
-                    <Text style={styles.salaryLabel}>Monthly Salary</Text>
-                    <Text style={styles.salaryValue}>{job.salary}</Text>
+            <View style={s.footer}>
+                <View>
+                    <Text style={s.salaryLabel}>Monthly</Text>
+                    <Text style={s.salaryValue}>{job.salary}</Text>
                 </View>
-                <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-                    <LinearGradient
-                        colors={['#10B981', '#059669']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.gradient}
-                    >
-                        <MaterialCommunityIcons name="phone" size={18} color="#FFFFFF" />
-                        <Text style={styles.callText}>Call Now</Text>
-                    </LinearGradient>
+                <TouchableOpacity style={s.callBtn} onPress={handleCall}>
+                    <MaterialCommunityIcons name="phone" size={15} color="#000000" />
+                    <Text style={s.callText}>Call Now</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
     );
 };
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        padding: 20,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#F1F5F9',
-        ...SHADOWS.medium,
+        backgroundColor: '#1C1C1E', borderRadius: 20, padding: 16,
+        marginBottom: 14,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
+    header: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    iconBox: {
+        width: 46, height: 46, borderRadius: 14,
+        backgroundColor: '#00C89620', alignItems: 'center', justifyContent: 'center',
     },
-    iconContainer: {
-        width: 56,
-        height: 56,
-        borderRadius: 16,
-        backgroundColor: '#EEF2FF',
-        alignItems: 'center',
-        justifyContent: 'center',
+    titleBlock: { flex: 1, marginLeft: 12 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
+    title: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', flex: 1, marginRight: 8 },
+    urgentTag: { backgroundColor: '#FF453A20', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+    urgentText: { color: '#FF453A', fontSize: 9, fontWeight: '800' },
+    company: { fontSize: 12, color: '#636366', fontWeight: '500' },
+    detailRow: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#252527', paddingVertical: 9, paddingHorizontal: 12,
+        borderRadius: 12, marginBottom: 14, gap: 6,
     },
-    titleContent: {
-        flex: 1,
-        marginLeft: 16,
-    },
-    titleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    title: {
-        fontSize: 17,
-        fontWeight: '800',
-        color: '#1E293B',
-        flex: 1,
-        marginRight: 8,
-    },
-    urgentBadge: {
-        backgroundColor: '#FEF2F2',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#FEE2E2',
-    },
-    urgentText: {
-        color: '#EF4444',
-        fontSize: 10,
-        fontWeight: '900',
-    },
-    company: {
-        fontSize: 14,
-        color: '#64748B',
-        fontWeight: '600',
-    },
-    detailsGrid: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        backgroundColor: '#F8FAFC',
-        padding: 12,
-        borderRadius: 16,
-        marginBottom: 16,
-    },
-    detailItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    detailText: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#475569',
-    },
+    detailItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    detailText: { fontSize: 11, fontWeight: '600', color: '#AEAEB2' },
+    detailDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: '#3A3A3C' },
     footer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderTopWidth: 1,
-        borderTopColor: '#F1F5F9',
-        paddingTop: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#2C2C2E', paddingTop: 12,
     },
-    salaryContainer: {
-        flex: 1,
+    salaryLabel: { fontSize: 10, color: '#636366', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+    salaryValue: { fontSize: 17, fontWeight: '800', color: '#00C896', marginTop: 2 },
+    callBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 6,
+        backgroundColor: '#00C896', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
     },
-    salaryLabel: {
-        fontSize: 11,
-        color: '#94A3B8',
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        marginBottom: 2,
-    },
-    salaryValue: {
-        fontSize: 18,
-        fontWeight: '900',
-        color: '#1E293B',
-    },
-    callButton: {
-        borderRadius: 14,
-        overflow: 'hidden',
-        ...SHADOWS.light,
-    },
-    gradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        gap: 8,
-    },
-    callText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '800',
-    },
+    callText: { color: '#000000', fontSize: 13, fontWeight: '700' },
 });
