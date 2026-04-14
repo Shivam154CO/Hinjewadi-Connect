@@ -192,11 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const completeProfile = async (profile: Partial<UserProfile>) => {
         setIsProcessing(true);
         try {
-            const newId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-                const r = (Math.random() * 16) | 0;
-                const v = c === 'x' ? r : (r & 0x3) | 0x8;
-                return v.toString(16);
-            });
+            const newId = Math.random().toString(36).substring(2, 11) + '-' + Math.random().toString(36).substring(2, 6); // Simple unique ID for temp use
             const userProfile: UserProfile = {
                 id: newId,
                 name: profile.name || name,
