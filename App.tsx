@@ -25,6 +25,7 @@ import { ForceUpdateBlocker } from './src/components/ForceUpdateBlocker';
 import { appConfigService } from './src/services/appConfigService';
 import { telemetryService } from './src/services/telemetryService';
 import { notificationService } from './src/services/notificationService';
+import { MarketProvider } from './src/context/MarketContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -87,8 +88,10 @@ export default function App() {
                 <QueryProvider>
                     <SafeAreaProvider>
                         <AuthProvider>
-                            <AppNavigator />
-                            <StatusBar style="light" />
+                            <MarketProvider>
+                                <AppNavigator />
+                                <StatusBar style="light" />
+                            </MarketProvider>
                         </AuthProvider>
                     </SafeAreaProvider>
                 </QueryProvider>

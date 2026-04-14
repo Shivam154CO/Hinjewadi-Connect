@@ -22,6 +22,7 @@ export const COLORS = {
     phase3: '#AF52DE',
     card: '#1C1C1E',
     input: '#2C2C2E',
+    secondary: '#007AFF',
 };
 
 export const FONTS = {

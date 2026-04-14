@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Room } from '../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { marketEngine } from '../services/marketEngineService';
+import { useAuth } from '../context/AuthContext';
 
 interface RoomCardProps {
     room: Room;
@@ -9,7 +11,11 @@ interface RoomCardProps {
 }
 
 export const RoomCard: React.FC<RoomCardProps> = ({ room, onPress }) => {
+    const { user } = useAuth();
     const [saved, setSaved] = useState(false);
+
+    // Calculate dynamic match score based on current user profile
+    const match = user ? marketEngine.calculateRoomMatch(user, room) : null;
 
     return (
         <TouchableOpacity style={s.card} onPress={() => onPress(room.id)} activeOpacity={0.85}>
@@ -22,6 +28,15 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, onPress }) => {
                         <MaterialCommunityIcons name="home-city-outline" size={28} color="#3A3A3C" />
                     </View>
                 )}
+                
+                {/* Advanced Feature: Logic Driven Match Score Overlay */}
+                {match && match.score > 70 && (
+                    <View style={s.matchBadge}>
+                        <MaterialCommunityIcons name="lightning-bolt" size={10} color="#000" />
+                        <Text style={s.matchText}>{match.score}% Match</Text>
+                    </View>
+                )}
+
                 <View style={s.imgOverlay} />
                 {/* Type pill */}
                 <View style={s.typePill}>
@@ -65,6 +80,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, onPress }) => {
         </TouchableOpacity>
     );
 };
+
 
 const s = StyleSheet.create({
     card: {
@@ -110,4 +126,10 @@ const s = StyleSheet.create({
         backgroundColor: '#FFD60A15', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
     },
     ratingText: { fontSize: 11, fontWeight: '700', color: '#FFD60A' },
+    matchBadge: {
+        position: 'absolute', top: 12, left: 70,
+        backgroundColor: '#00C896', paddingHorizontal: 8, paddingVertical: 4,
+        borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 2,
+    },
+    matchText: { fontSize: 10, fontWeight: '800', color: '#000000', textTransform: 'uppercase' },
 });

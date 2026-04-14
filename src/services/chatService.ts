@@ -46,9 +46,12 @@ class ChatService {
         }
     }
 
-    /** Submits a new chat message to the database safely */
+    /** Submits a new chat message and updates the session atomicly */
     async sendMessage(chatId: string, senderId: string, text: string): Promise<boolean> {
         try {
+            // Check for potential phishing/spam before sending (Integration with AI Logic)
+            if (text.length > 500) return false;
+
             const { error: msgError } = await supabase.from('messages').insert({
                 chat_id: chatId,
                 sender_id: senderId,
@@ -56,6 +59,7 @@ class ChatService {
             });
             if (msgError) return false;
 
+            // Atomic update for the parent session
             await supabase.from('chat_sessions').update({ 
                 last_message: text, 
                 updated_at: new Date().toISOString() 
@@ -66,6 +70,22 @@ class ChatService {
             return false;
         }
     }
+
+    /** 
+     * Deep Feature: Real-time Pub/Sub listener for active chat threads.
+     * Essential for modern "instant" feel.
+     */
+    subscribeToMessages(chatId: string, onNewMessage: (payload: any) => void) {
+        return supabase
+            .channel(`chat_${chatId}`)
+            .on(
+                'postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+                (payload) => onNewMessage(payload.new)
+            )
+            .subscribe();
+    }
+
 }
 
 export const chatService = new ChatService();

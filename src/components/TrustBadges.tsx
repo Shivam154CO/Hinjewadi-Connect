@@ -145,15 +145,42 @@ export const StarRating: React.FC<StarRatingProps> = ({
     </View>
 );
 
-// ── Trust Info Card (for detail screens / profiles) ──
-interface TrustInfoCardProps {
-    verificationStatus: VerificationStatus;
-    trustScore: number;
-    totalReviews: number;
-    averageRating: number;
-    joinedAt: string;
-    onVerify?: () => void;
+// ── Trust Analysis Component (Deep Diagnostic View) ──
+interface TrustAnalysisProps {
+    score: number;
+    activityLog?: { id: string, event: string, impact: number }[];
 }
+
+export const TrustAnalysis: React.FC<TrustAnalysisProps> = ({ score, activityLog = [] }) => {
+    const trust = getTrustLabel(score);
+    
+    return (
+        <View style={styles.deepTrustCard}>
+            <View style={styles.trustHeader}>
+                <View style={[styles.trustHexagon, { backgroundColor: trust.color + '20' }]}>
+                    <Text style={[styles.trustHexScore, { color: trust.color }]}>{score}</Text>
+                </View>
+                <View style={styles.trustHeaderText}>
+                    <Text style={styles.trustLevel}>{trust.label} Reputation</Text>
+                    <Text style={styles.trustSub}>Based on hyper-local community activity</Text>
+                </View>
+            </View>
+
+            <View style={styles.factorsList}>
+                <View style={styles.factorItem}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={16} color="#AEAEB2" />
+                    <Text style={styles.factorLabel}>Identity Verification</Text>
+                    <Text style={styles.factorValue}>{score > 70 ? 'Complete' : 'Pending'}</Text>
+                </View>
+                <View style={styles.factorItem}>
+                    <MaterialCommunityIcons name="account-group-outline" size={16} color="#AEAEB2" />
+                    <Text style={styles.factorLabel}>Community Vouched</Text>
+                    <Text style={styles.factorValue}>{score > 85 ? 'High' : 'Medium'}</Text>
+                </View>
+            </View>
+        </View>
+    );
+};
 
 export const TrustInfoCard: React.FC<TrustInfoCardProps> = ({
     verificationStatus,
@@ -205,7 +232,7 @@ export const TrustInfoCard: React.FC<TrustInfoCardProps> = ({
                 </View>
                 <View style={styles.trustStatDivider} />
                 <View style={styles.trustStat}>
-                    <MaterialCommunityIcons name="calendar-clock" size={16} color={COLORS.secondary} />
+                    <MaterialCommunityIcons name="calendar-clock" size={16} color="#AF52DE" />
                     <Text style={styles.trustStatValue}>{monthsAgo}mo</Text>
                     <Text style={styles.trustStatLabel}>Member</Text>
                 </View>
@@ -216,17 +243,24 @@ export const TrustInfoCard: React.FC<TrustInfoCardProps> = ({
                 <VerifiedBadge status={verificationStatus} size="md" />
                 {verificationStatus === 'unverified' && onVerify && (
                     <TouchableOpacity style={styles.verifyBtn} onPress={onVerify}>
-                        <MaterialCommunityIcons name="shield-plus" size={16} color={COLORS.white} />
+                        <MaterialCommunityIcons name="shield-plus" size={16} color="#000" />
                         <Text style={styles.verifyBtnText}>Get Verified</Text>
                     </TouchableOpacity>
-                )}
-                {verificationStatus === 'verified' && (
-                    <Text style={styles.verifiedByText}>Verified by Admin</Text>
                 )}
             </View>
         </View>
     );
 };
+
+
+interface TrustInfoCardProps {
+    verificationStatus: VerificationStatus;
+    trustScore: number;
+    totalReviews: number;
+    averageRating: number;
+    joinedAt: string;
+    onVerify?: () => void;
+}
 
 const styles = StyleSheet.create({
     // Verified Badge
@@ -260,6 +294,61 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: '600',
     },
+    // Deep Trust Card (New UI)
+    deepTrustCard: {
+        backgroundColor: '#1C1C1E',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 16,
+    },
+    trustHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        marginBottom: 20,
+    },
+    trustHexagon: {
+        width: 50,
+        height: 50,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    trustHexScore: {
+        fontSize: 20,
+        fontWeight: '900',
+    },
+    trustHeaderText: {
+        flex: 1,
+    },
+    trustLevel: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    trustSub: {
+        fontSize: 12,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    factorsList: {
+        gap: 12,
+    },
+    factorItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    factorLabel: {
+        flex: 1,
+        fontSize: 14,
+        color: '#AEAEB2',
+    },
+    factorValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
     // Star Rating
     starRow: {
         flexDirection: 'row',
@@ -278,7 +367,7 @@ const styles = StyleSheet.create({
     },
     // Trust Info Card
     trustCard: {
-        backgroundColor: COLORS.white,
+        backgroundColor: '#1C1C1E',
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md,
         gap: SPACING.md,
@@ -291,7 +380,7 @@ const styles = StyleSheet.create({
     trustCardTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: COLORS.text,
+        color: COLORS.white,
     },
     trustBarContainer: {
         gap: 4,
@@ -299,7 +388,7 @@ const styles = StyleSheet.create({
     trustBarBg: {
         height: 8,
         borderRadius: 4,
-        backgroundColor: '#F1F5F9',
+        backgroundColor: '#2C2C2E',
         overflow: 'hidden',
     },
     trustBarFill: {
@@ -318,7 +407,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#252527',
         borderRadius: BORDER_RADIUS.md,
         paddingVertical: SPACING.sm,
     },
@@ -329,7 +418,7 @@ const styles = StyleSheet.create({
     trustStatValue: {
         fontSize: 14,
         fontWeight: '700',
-        color: COLORS.text,
+        color: COLORS.white,
     },
     trustStatLabel: {
         fontSize: 10,
@@ -349,14 +438,14 @@ const styles = StyleSheet.create({
     verifyBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary,
+        backgroundColor: '#00C896',
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: BORDER_RADIUS.full,
         gap: 6,
     },
     verifyBtnText: {
-        color: COLORS.white,
+        color: '#000000',
         fontSize: 12,
         fontWeight: '700',
     },
@@ -366,3 +455,4 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
 });
+

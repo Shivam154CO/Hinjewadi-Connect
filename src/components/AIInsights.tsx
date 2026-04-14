@@ -10,7 +10,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { aiService, AIInsight } from '../services/aiService';
 import { useTranslation } from 'react-i18next';
-import { COLORS } from '../theme/theme';
+import { COLORS, FONTS, SHADOWS } from '../theme/theme';
 
 export const AIInsights: React.FC = () => {
     const { t } = useTranslation();
@@ -24,7 +24,7 @@ export const AIInsights: React.FC = () => {
     if (loading) {
         return (
             <View style={styles.loadingCard}>
-                <ActivityIndicator size="small" color={COLORS.accent} />
+                <ActivityIndicator size="small" color={COLORS.primary} />
                 <Text style={styles.loadingText}>Loading insights…</Text>
             </View>
         );
@@ -42,7 +42,7 @@ export const AIInsights: React.FC = () => {
                             <MaterialCommunityIcons
                                 name={insight.icon as any}
                                 size={18}
-                                color={COLORS.accent}
+                                color={COLORS.primary}
                             />
                         </View>
                         <Text style={styles.cardTitle} numberOfLines={1}>{insight.title}</Text>
@@ -59,28 +59,41 @@ const styles = StyleSheet.create({
     sectionLabel: {
         fontSize: 12, fontWeight: '700', color: COLORS.textMuted,
         textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12,
+        paddingHorizontal: 20,
     },
     loadingCard: {
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: '#F9FAFB', borderRadius: 10,
-        padding: 14, marginBottom: 28,
-        borderWidth: 1, borderColor: '#E5E7EB',
+        backgroundColor: COLORS.surface, borderRadius: 12,
+        padding: 14, marginHorizontal: 20, marginBottom: 28,
+        borderWidth: 1, borderColor: COLORS.border,
     },
-    loadingText: { fontSize: 13, color: COLORS.textMuted },
-    scroll: { gap: 10, paddingRight: 4 },
+    loadingText: { fontSize: 13, color: COLORS.textSecondary, fontFamily: FONTS.regular },
+    scroll: { gap: 12, paddingHorizontal: 20 },
     card: {
         width: 200,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        padding: 14,
+        backgroundColor: COLORS.surface,
+        borderRadius: 16,
+        padding: 16,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: COLORS.border,
+        ...SHADOWS.soft,
     },
     iconBox: {
-        width: 32, height: 32, borderRadius: 8,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+        width: 36, height: 36, borderRadius: 10,
+        backgroundColor: COLORS.surfaceElevated,
+        alignItems: 'center', justifyContent: 'center', marginBottom: 12,
     },
-    cardTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-    cardDesc: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17 },
+    cardTitle: { 
+        fontSize: 14, 
+        fontWeight: '700', 
+        color: COLORS.text, 
+        marginBottom: 6,
+        fontFamily: FONTS.bold,
+    },
+    cardDesc: { 
+        fontSize: 12, 
+        color: COLORS.textSecondary, 
+        lineHeight: 18,
+        fontFamily: FONTS.regular,
+    },
 });
