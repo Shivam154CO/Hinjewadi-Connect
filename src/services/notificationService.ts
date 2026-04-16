@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 // Set up UI behavior when a notification arrives while the app is open
 Notifications.setNotificationHandler({
@@ -15,6 +16,12 @@ Notifications.setNotificationHandler({
 
 class NotificationService {
     async registerForPushNotificationsAsync(): Promise<string | undefined> {
+        // Expo Go no longer supports remote notifications on Android (SDK 53+)
+        if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+            console.info('🔔 Push Notifications: Remote notifications are not supported in Expo Go. Use a development build to test this feature.');
+            return;
+        }
+
         let token;
 
         if (Platform.OS === 'android') {

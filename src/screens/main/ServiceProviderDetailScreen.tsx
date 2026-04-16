@@ -366,7 +366,7 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F3FF',
+        backgroundColor: COLORS.background,
     },
     center: {
         flex: 1,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.light,
@@ -407,13 +407,13 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.light,
     },
     profileCard: {
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         marginHorizontal: SPACING.lg,
         borderRadius: BORDER_RADIUS.xl,
         padding: SPACING.xl,
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginBottom: SPACING.md,
         borderWidth: 3,
-        borderColor: COLORS.white,
+        borderColor: COLORS.surfaceAlt,
         ...SHADOWS.medium,
     },
     avatarText: {
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     },
     quickInfoItem: {
         flex: 1,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md,
         alignItems: 'center',
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#F5F3FF',
+        backgroundColor: COLORS.white + '10',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: SPACING.xs,
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     section: {
         marginHorizontal: SPACING.lg,
         marginTop: SPACING.lg,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md,
         ...SHADOWS.light,
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     rateForm: {
-        backgroundColor: '#F8F7FC',
+        backgroundColor: COLORS.surfaceAlt,
         borderRadius: BORDER_RADIUS.md,
         padding: SPACING.md,
         marginBottom: SPACING.md,
@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         minHeight: 80,
         textAlignVertical: 'top',
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
     },
     submitRateBtn: {
         backgroundColor: COLORS.secondary,
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
         padding: SPACING.md,
         paddingBottom: SPACING.xl,
         gap: SPACING.sm,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
         ...SHADOWS.medium,

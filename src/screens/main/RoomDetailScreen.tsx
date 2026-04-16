@@ -216,7 +216,7 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                     </View>
 
                     {/* Report & Safety */}
-                    <View style={[styles.section, { marginTop: SPACING.lg, padding: SPACING.md, backgroundColor: COLORS.white, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.light }]}>
+                    <View style={[styles.section, { marginTop: SPACING.lg, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.light }]}>
                         <View style={styles.sectionHeaderRow}>
                             <MaterialCommunityIcons name="shield-outline" size={20} color={COLORS.textSecondary} />
                             <Text style={styles.sectionTitle}>Safety</Text>
@@ -265,7 +265,7 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.background,
     },
     center: {
         justifyContent: 'center',
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         left: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         padding: 10,
         borderRadius: BORDER_RADIUS.full,
         ...SHADOWS.medium,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
         zIndex: 10,
     },
     headerActionButton: {
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         padding: 10,
         borderRadius: BORDER_RADIUS.full,
         ...SHADOWS.medium,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     content: {
         padding: SPACING.lg,
         marginTop: -BORDER_RADIUS.xl,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.background,
         borderTopLeftRadius: BORDER_RADIUS.xl,
         borderTopRightRadius: BORDER_RADIUS.xl,
     },
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     priceDivider: {
         width: 1,
         height: 30,
-        backgroundColor: COLORS.border,
+        backgroundColor: COLORS.borderLight,
         marginHorizontal: SPACING.lg,
     },
     quickInfoRow: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: COLORS.border,
+        backgroundColor: COLORS.borderLight,
         marginBottom: SPACING.lg,
     },
     sectionTitle: {
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         padding: SPACING.lg,
         paddingBottom: 40,
         flexDirection: 'row',

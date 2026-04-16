@@ -256,7 +256,7 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFB',
+        backgroundColor: COLORS.background,
     },
     center: {
         flex: 1,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.light,
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         alignItems: 'center',
         justifyContent: 'center',
         ...SHADOWS.light,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     // Hero
     heroCard: {
         marginHorizontal: SPACING.lg,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.xl,
         overflow: 'hidden',
         ...SHADOWS.light,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     heroImagePlaceholder: {
         width: '100%',
         height: 180,
-        backgroundColor: '#EEF2F6',
+        backgroundColor: COLORS.white + '05',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     },
     quickInfoItem: {
         flex: 1,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md,
         alignItems: 'center',
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     section: {
         marginHorizontal: SPACING.lg,
         marginTop: SPACING.md,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.md,
         ...SHADOWS.light,
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#E8F0FE',
+        backgroundColor: COLORS.white + '10',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
         padding: SPACING.md,
         paddingBottom: SPACING.xl,
         gap: SPACING.sm,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
         ...SHADOWS.medium,
