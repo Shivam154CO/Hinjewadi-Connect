@@ -4,6 +4,7 @@ import { AuthStackParamList } from '../types';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { RoleSelectionScreen } from '../screens/auth/RoleSelectionScreen';
 import { ProfileCreationScreen } from '../screens/auth/ProfileCreationScreen';
+import { SplashScreen } from '../screens/auth/SplashScreen';
 import { COLORS } from '../theme/theme';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -11,11 +12,13 @@ const Stack = createNativeStackNavigator<AuthStackParamList>();
 export const AuthNavigator = () => {
     return (
         <Stack.Navigator
+            initialRouteName="Splash"
             screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: COLORS.background }
             }}
         >
+            <Stack.Screen name="Splash" component={SplashScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
             <Stack.Screen name="ProfileCreation" component={ProfileCreationScreen} />

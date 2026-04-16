@@ -13,25 +13,42 @@ interface AppTextInputProps extends TextInputProps {
     label?: string;
     error?: string;
     containerStyle?: ViewStyle;
+    icon?: string;
 }
+
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export const AppTextInput: React.FC<AppTextInputProps> = ({
     label,
     error,
     containerStyle,
+    icon,
     ...props
 }) => {
+    const [isFocused, setIsFocused] = React.useState(false);
+
     return (
         <View style={[styles.container, containerStyle]}>
-            {label && <Text style={styles.label}>{label}</Text>}
+            {label && <Text style={[styles.label, isFocused && { color: COLORS.primary }]}>{label}</Text>}
             <View style={[
                 styles.inputContainer,
+                isFocused && styles.inputFocused,
                 error ? styles.inputError : null
             ]}>
+                {icon && (
+                    <MaterialCommunityIcons 
+                        name={icon as any} 
+                        size={22} 
+                        color={isFocused ? COLORS.primary : COLORS.textMuted} 
+                        style={styles.icon}
+                    />
+                )}
                 <TextInput
                     style={styles.input}
-                    placeholderTextColor={COLORS.textSecondary}
+                    placeholderTextColor={COLORS.textMuted}
                     selectionColor={COLORS.primary}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     {...props}
                 />
             </View>
@@ -52,18 +69,33 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.sm,
     },
     inputContainer: {
-        backgroundColor: COLORS.input,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         borderWidth: 1.5,
         borderColor: COLORS.border,
         paddingHorizontal: SPACING.md,
-        height: 64,
-        justifyContent: 'center',
+        height: 60,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    inputFocused: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.surfaceAlt,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    icon: {
+        marginRight: SPACING.sm,
     },
     input: {
-        fontSize: 18,
+        flex: 1,
+        fontSize: 16,
         fontFamily: FONTS.regular,
         color: COLORS.text,
+        height: '100%',
     },
     inputError: {
         borderColor: COLORS.error,

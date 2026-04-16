@@ -20,6 +20,7 @@ export interface UserProfile {
 }
 
 export type AuthStackParamList = {
+    Splash: undefined;
     Login: undefined;
     RoleSelection: undefined;
     ProfileCreation: {

@@ -7,7 +7,8 @@ import {
     ViewStyle,
     TextStyle
 } from 'react-native';
-import { COLORS, BORDER_RADIUS, SPACING, FONTS } from '../theme/theme';
+import { COLORS, BORDER_RADIUS, SPACING, FONTS, SHADOWS } from '../theme/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface PrimaryButtonProps {
     title: string;
@@ -28,58 +29,86 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     textStyle,
     variant = 'primary'
 }) => {
-    const getBackgroundColor = () => {
-        if (disabled) return COLORS.border;
-        if (variant === 'secondary') return COLORS.secondary;
-        if (variant === 'outline') return 'transparent';
-        return COLORS.primary;
+    const getGradientColors = (): [string, string] => {
+        if (disabled) return [COLORS.border, COLORS.border];
+        if (variant === 'secondary') return [COLORS.secondary, '#5856D6']; // Indigo gradient for secondary
+        if (variant === 'outline') return ['transparent', 'transparent'];
+        return [COLORS.primary, '#00A87E']; // Teal to darker teal
     };
+
+    const isOutline = variant === 'outline';
 
     return (
         <TouchableOpacity
-            style={[
-                styles.button,
-                {
-                    backgroundColor: getBackgroundColor(),
-                    borderWidth: variant === 'outline' ? 1.5 : 0,
-                    borderColor: variant === 'outline' ? COLORS.primary : 'transparent'
-                },
-                style
-            ]}
             onPress={onPress}
             disabled={disabled || loading}
-            activeOpacity={0.7}
-            accessibilityLabel={title}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !!(disabled || loading) }}
+            activeOpacity={0.8}
+            style={[
+                styles.buttonContainer,
+                !isOutline && !disabled && (variant === 'primary' ? styles.primaryGlow : styles.secondaryGlow),
+                style
+            ]}
         >
-            {loading ? (
-                <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.white} />
-            ) : (
-                <Text style={[
-                    styles.text,
-                    { color: variant === 'outline' ? COLORS.primary : COLORS.white },
-                    textStyle
-                ]}>
-                    {title}
-                </Text>
-            )}
+            <LinearGradient
+                colors={getGradientColors()}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                    styles.gradient,
+                    isOutline && {
+                        borderWidth: 1.5,
+                        borderColor: COLORS.primary,
+                        backgroundColor: 'transparent'
+                    }
+                ]}
+            >
+                {loading ? (
+                    <ActivityIndicator color={isOutline ? COLORS.primary : COLORS.white} />
+                ) : (
+                    <Text style={[
+                        styles.text,
+                        { color: isOutline ? COLORS.primary : COLORS.white },
+                        textStyle
+                    ]}>
+                        {title}
+                    </Text>
+                )}
+            </LinearGradient>
         </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
-    button: {
+    buttonContainer: {
+        borderRadius: BORDER_RADIUS.lg,
+        overflow: 'visible', // For shadows to show
+    },
+    gradient: {
         paddingVertical: 18,
         paddingHorizontal: SPACING.lg,
         borderRadius: BORDER_RADIUS.lg,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 60,
+        minHeight: 58,
+    },
+    primaryGlow: {
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 15,
+        elevation: 8,
+    },
+    secondaryGlow: {
+        shadowColor: COLORS.secondary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 15,
+        elevation: 8,
     },
     text: {
-        fontSize: 18,
+        fontSize: 17,
         fontFamily: FONTS.heading,
-        letterSpacing: 0.5,
+        letterSpacing: 0.8,
+        fontWeight: '700',
     },
 });

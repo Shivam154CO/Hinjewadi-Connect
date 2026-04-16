@@ -16,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps, ListingCategory, ServiceCategory, JobCategory } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
@@ -95,11 +96,21 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Background Blobs */}
+            <LinearGradient
+                colors={[COLORS.primary + '08', 'transparent']}
+                style={styles.blob1}
+            />
+            <LinearGradient
+                colors={['transparent', COLORS.secondary + '05']}
+                style={styles.blob2}
+            />
+            
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.header}>
                         <Text style={styles.title}>{t('profile_creation_title')}</Text>
                         <Text style={styles.subtitle}>Help others discover you in Hinjewadi</Text>
@@ -125,9 +136,21 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                     )}
 
                     <View style={styles.photoContainer}>
-                        <TouchableOpacity style={styles.photoPlaceholder}>
-                            <MaterialCommunityIcons name="camera-plus" size={32} color={COLORS.textSecondary} />
-                            <Text style={styles.photoText}>Add Photo</Text>
+                        <TouchableOpacity activeOpacity={0.8}>
+                            <LinearGradient
+                                colors={[COLORS.surfaceAlt, COLORS.surface]}
+                                style={styles.photoPlaceholder}
+                            >
+                                <View style={styles.photoInnerContainer}>
+                                    <View style={styles.cameraCircle}>
+                                        <MaterialCommunityIcons name="camera-plus" size={28} color={COLORS.primary} />
+                                    </View>
+                                    <View style={styles.photoPlusIcon}>
+                                        <MaterialCommunityIcons name="plus" size={12} color={COLORS.white} />
+                                    </View>
+                                </View>
+                                <Text style={styles.photoText}>Add Photo</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
 
@@ -137,6 +160,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                             placeholder="Enter your name"
                             value={name}
                             onChangeText={setName}
+                            icon="account-outline"
                         />
 
                         {role === 'worker' && workerType === 'service' && (
@@ -170,6 +194,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                                     placeholder="₹3,000 - ₹5,000"
                                     value={salary}
                                     onChangeText={setSalary}
+                                    icon="currency-inr"
                                 />
                             </>
                         )}
@@ -205,6 +230,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                                     placeholder="₹15,000"
                                     value={salary}
                                     onChangeText={setSalary}
+                                    icon="wallet-outline"
                                 />
                             </>
                         )}
@@ -220,12 +246,19 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                                     ]}
                                     onPress={() => setSelectedArea(area)}
                                 >
-                                    <Text style={[
-                                        styles.areaButtonText,
-                                        selectedArea === area && styles.areaButtonTextActive
-                                    ]}>
-                                        {area}
-                                    </Text>
+                                    <LinearGradient
+                                        colors={selectedArea === area ? [COLORS.primary, '#00A87E'] : [COLORS.surface, COLORS.surface]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.areaGradient}
+                                    >
+                                        <Text style={[
+                                            styles.areaButtonText,
+                                            selectedArea === area && styles.areaButtonTextActive
+                                        ]}>
+                                            {area}
+                                        </Text>
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -248,9 +281,29 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
+    blob1: {
+        position: 'absolute',
+        top: -100,
+        right: -50,
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        zIndex: 0,
+    },
+    blob2: {
+        position: 'absolute',
+        bottom: 50,
+        left: -80,
+        width: 250,
+        height: 250,
+        borderRadius: 125,
+        zIndex: 0,
+    },
     scrollContent: {
         padding: SPACING.xl,
+        paddingTop: SPACING.lg,
         flexGrow: 1,
+        zIndex: 1,
     },
     header: {
         marginTop: SPACING.lg,
@@ -307,21 +360,48 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.xl,
     },
     photoPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: COLORS.surface,
-        borderWidth: 2,
-        borderColor: COLORS.border,
-        borderStyle: 'dashed',
+        width: 104,
+        height: 104,
+        borderRadius: 52,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        ...SHADOWS.soft,
+    },
+    photoInnerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 8,
+    },
+    cameraCircle: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: COLORS.primary + '10',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    photoPlusIcon: {
+        position: 'absolute',
+        right: -2,
+        bottom: 25,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: COLORS.surfaceAlt,
     },
     photoText: {
-        fontSize: 12,
-        color: COLORS.textSecondary,
-        marginTop: 6,
+        fontSize: 11,
+        color: COLORS.textMuted,
         fontFamily: FONTS.bold,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     form: {
         marginTop: SPACING.sm,
@@ -340,22 +420,30 @@ const styles = StyleSheet.create({
     },
     areaButton: {
         flex: 1,
-        paddingVertical: SPACING.md,
         borderRadius: BORDER_RADIUS.md,
         backgroundColor: COLORS.surface,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: COLORS.border,
+        overflow: 'hidden',
+    },
+    areaGradient: {
+        flex: 1,
+        paddingVertical: SPACING.md,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     areaButtonActive: {
-        backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
-        ...SHADOWS.soft,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
     },
     areaButtonText: {
         fontSize: 14,
         fontWeight: '700',
-        color: COLORS.textSecondary,
+        color: COLORS.textMuted,
     },
     areaButtonTextActive: {
         color: COLORS.white,
