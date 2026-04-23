@@ -47,7 +47,7 @@ class NotificationService {
             }
             
             token = await Notifications.getExpoPushTokenAsync({
-                projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+                projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID || Constants.expoConfig?.extra?.eas?.projectId,
             });
             return token.data;
         } else {
