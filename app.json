@@ -33,7 +33,8 @@
         "expo-build-properties",
         {
           "android": {
-            "enableProguardInReleaseBuilds": true
+            "enableProguardInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -43,7 +44,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "com.hinjewadi.connect"
+        "projectId": "4f6d634a-93b8-4dcd-b245-cb40a6389fff"
       }
     }
   }
