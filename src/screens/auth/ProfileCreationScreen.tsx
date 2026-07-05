@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, FONTS } from '../../theme/theme';
@@ -17,6 +18,7 @@ import { AuthScreenProps, ListingCategory, ServiceCategory, JobCategory } from '
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
+import { validation } from '../../utils/validation';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
@@ -55,6 +57,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
     const { t } = useTranslation();
     const { role, listingCategory, workerType } = route.params;
     const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
     const [selectedArea, setSelectedArea] = useState('Phase 1');
 
     // Worker Specific State
@@ -67,10 +70,21 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
     const { completeProfile, isProcessing } = useAuth();
 
     const handleComplete = async () => {
-        if (!name.trim()) return;
+        const nameVal = validation.name(name);
+        if (!nameVal.isValid) {
+            Alert.alert('Required Field', nameVal.error);
+            return;
+        }
+
+        const phoneVal = validation.phone(phone);
+        if (!phoneVal.isValid) {
+            Alert.alert('Required Field', phoneVal.error);
+            return;
+        }
 
         const profileData: any = {
             name,
+            phone,
             area: selectedArea,
             role,
             listingCategory: listingCategory || null,
@@ -81,12 +95,12 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
             if (workerType === 'service') {
                 profileData.serviceCategory = serviceCategory;
                 profileData.experience = experience;
-                profileData.skills = skills.split(',').map(s => s.trim()).filter(s => s);
+                profileData.skills = skills.split(',').map((s: string) => s.trim()).filter((s: string) => s);
                 profileData.priceRange = salary;
             } else if (workerType === 'job_seeker') {
                 profileData.jobCategory = jobCategory;
                 profileData.experience = experience;
-                profileData.skills = skills.split(',').map(s => s.trim()).filter(s => s);
+                profileData.skills = skills.split(',').map((s: string) => s.trim()).filter((s: string) => s);
                 profileData.expectedSalary = salary;
             }
         }
@@ -139,7 +153,7 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                         <TouchableOpacity activeOpacity={0.8}>
                             <LinearGradient
                                 colors={[COLORS.surfaceAlt, COLORS.surface]}
-                                style={styles.photoPlaceholder}
+                                style={styles.photoIconFallback}
                             >
                                 <View style={styles.photoInnerContainer}>
                                     <View style={styles.cameraCircle}>
@@ -161,6 +175,16 @@ export const ProfileCreationScreen: React.FC<AuthScreenProps<'ProfileCreation'>>
                             value={name}
                             onChangeText={setName}
                             icon="account-outline"
+                        />
+
+                        <AppTextInput
+                            label="Phone Number"
+                            placeholder="Enter 10-digit mobile number"
+                            value={phone}
+                            onChangeText={setPhone}
+                            keyboardType="phone-pad"
+                            maxLength={10}
+                            icon="phone-outline"
                         />
 
                         {role === 'worker' && workerType === 'service' && (
@@ -359,7 +383,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SPACING.xl,
     },
-    photoPlaceholder: {
+    photoIconFallback: {
         width: 104,
         height: 104,
         borderRadius: 52,

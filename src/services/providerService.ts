@@ -3,22 +3,29 @@ import { ServiceProvider, ServiceReview } from '../types';
 
 export const providerService = {
     async getProviders(limit: number = 20, offset: number = 0): Promise<ServiceProvider[]> {
-        const { data, error } = await supabase
-            .from('service_providers')
-            .select(`
-                *,
-                service_reviews (*)
-            `)
-            .order('rating', { ascending: false })
-            .range(offset, offset + limit - 1);
+        try {
+            const { data, error } = await supabase
+                .from('service_providers')
+                .select(`
+                    *,
+                    service_reviews (*)
+                `)
+                .order('rating', { ascending: false })
+                .range(offset, offset + limit - 1);
 
-        if (error) {
-            console.error('Error fetching providers:', error);
-            throw error;
+            if (error) {
+                console.error('Error fetching providers:', error);
+                throw error;
+            }
+
+            return (data || []).map(this.mapProvider);
+        } catch (e) {
+            console.error('Exception in getProviders:', e);
+            throw e;
         }
-
-        return (data || []).map(this.mapProvider);
     },
+
+
 
     async getProviderById(id: string): Promise<ServiceProvider | null> {
         const { data, error } = await supabase
@@ -91,14 +98,16 @@ export const providerService = {
         return this.mapProvider(data);
     },
 
-    async addReview(providerId: string, review: Omit<ServiceReview, 'id' | 'date'>): Promise<void> {
+    async addReview(providerId: string, review: Omit<ServiceReview, 'id' | 'date'> & { userId?: string }): Promise<void> {
         const { error } = await supabase
             .from('service_reviews')
             .insert({
-                provider_id: providerId,
+                service_provider_id: providerId,
+                user_id: review.userId,
                 user_name: review.userName,
                 rating: review.rating,
                 comment: review.comment,
+                date: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
             });
 
         if (error) {

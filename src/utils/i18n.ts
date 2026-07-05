@@ -8,7 +8,7 @@ const resources: Resource = {
     translation: {
       welcome: 'Welcome to Hinjewadi-Connect',
       login_subtitle: 'Enter your name to continue',
-      name_placeholder: 'John Doe',
+      name_placeholder: 'Enter your full name',
       continue: 'Continue',
       role_selection_title: 'Who are you?',
       role_selection_subtitle: 'Choose your role to get started',

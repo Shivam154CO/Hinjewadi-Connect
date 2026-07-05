@@ -18,6 +18,10 @@ import { checkForSpam } from '../../utils/trustSafetyUtils';
 import { roomService } from '../../services/roomService';
 import { jobService } from '../../services/jobService';
 import { useAuth } from '../../context/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
+import { imageService } from '../../services/imageService';
+import { validation } from '../../utils/validation';
 
 const TYPES = ['Room', 'PG', 'Flat'];
 const FURNISHING = ['Unfurnished', 'Semi-furnished', 'Fully-furnished'];
@@ -54,15 +58,80 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
     const [company, setCompany] = useState(user?.name || '');
     const [isUrgent, setIsUrgent] = useState(false);
 
-    const handlePost = async () => {
-        if (!title || !description || !contactPhone) {
-            Alert.alert('Error', 'Please fill in basic details');
+    // Images picker state
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+    const pickImages = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+            Alert.alert('Permission Denied', 'Permission to access gallery is required to add photos.');
             return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsMultipleSelection: true,
+            selectionLimit: 5,
+            quality: 0.8,
+        });
+
+        if (!result.canceled) {
+            const uris = result.assets.map(asset => asset.uri);
+            setSelectedImages(prev => {
+                const combined = [...prev, ...uris];
+                if (combined.length > 5) {
+                    Alert.alert('Limit Reached', 'You can upload up to 5 images only.');
+                    return combined.slice(0, 5);
+                }
+                return combined;
+            });
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handlePost = async () => {
+        if (!title.trim() || !description.trim() || !contactPhone.trim()) {
+            Alert.alert('Required Fields', 'Please fill in title, description, and contact phone.');
+            return;
+        }
+
+        const phoneValidation = validation.phone(contactPhone);
+        if (!phoneValidation.isValid) {
+            Alert.alert('Invalid Phone', phoneValidation.error || 'Please enter a valid 10-digit Indian mobile number.');
+            return;
+        }
+
+        if (postingType === 'room') {
+            const priceValidation = validation.price(price);
+            if (!priceValidation.isValid) {
+                Alert.alert('Invalid Rent', priceValidation.error || 'Please enter a valid monthly rent amount greater than 0.');
+                return;
+            }
+
+            const depositNum = parseInt(deposit);
+            if (!deposit || isNaN(depositNum) || depositNum < 0) {
+                Alert.alert('Invalid Deposit', 'Please enter a valid security deposit amount.');
+                return;
+            }
+        }
+
+        if (postingType === 'job') {
+            if (!salary.trim()) {
+                Alert.alert('Salary Required', 'Please enter the salary offered for this position.');
+                return;
+            }
+            if (!company.trim()) {
+                Alert.alert('Company Required', 'Please enter the company or employer name.');
+                return;
+            }
         }
 
         const spamCheck = checkForSpam(`${title} ${description}`);
         if (spamCheck.isSpam) {
-            Alert.alert('⚠️ Spam Detected', spamCheck.reasons.join('\n'), [
+            Alert.alert('Spam Detected', spamCheck.reasons.join('\n'), [
                 { text: 'Edit', style: 'cancel' },
                 { text: 'Post Anyway', style: 'destructive', onPress: doPost },
             ]);
@@ -77,35 +146,48 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
         setLoading(true);
 
         try {
+            let uploadedUrls: string[] = [];
+            if (postingType === 'room' && selectedImages.length > 0) {
+                // Upload all selected local images to Supabase room-images bucket
+                for (const uri of selectedImages) {
+                    try {
+                        const url = await imageService.uploadImage(uri, 'room-images');
+                        uploadedUrls.push(url);
+                    } catch (uploadError) {
+                        console.error('Failed to upload image:', uri, uploadError);
+                    }
+                }
+            }
+
             if (postingType === 'room') {
                 const newRoom: Omit<Room, 'id' | 'createdAt'> = {
                     ownerId: user.id,
-                    title,
-                    description,
-                    price: parseInt(price) || 0,
-                    deposit: parseInt(deposit) || 0,
+                    title: title.trim(),
+                    description: description.trim(),
+                    price: parseInt(price),
+                    deposit: parseInt(deposit),
                     area: phase,
                     type: roomType as any,
                     furnishing: furnishing as any,
                     genderPreference: gender as any,
                     amenities: [],
-                    images: [],
+                    images: uploadedUrls,
                     status: 'Available',
-                    contactPhone: contactPhone,
+                    contactPhone: contactPhone.trim(),
                 };
                 await roomService.createRoom(newRoom);
             } else {
                 const newJob: Omit<Job, 'id' | 'postedAgo'> = {
                     employerId: user.id,
-                    title,
+                    title: title.trim(),
                     category: jobCategory,
-                    company,
-                    description,
-                    salary,
+                    company: company.trim(),
+                    description: description.trim(),
+                    salary: salary.trim(),
                     area: phase,
                     type: 'Full Time',
                     experience: '0-2 years',
-                    contactPhone: contactPhone,
+                    contactPhone: contactPhone.trim(),
                     urgent: isUrgent,
                     requirements: [],
                     benefits: [],
@@ -227,6 +309,27 @@ export const PostListingScreen: React.FC<MainStackScreenProps<'PostListing'>> = 
                     <>
                         {renderSelector('Furnishing', FURNISHING, furnishing, setFurnishing)}
                         {renderSelector('Gender', GENDER, gender, setGender)}
+
+                        {/* Image picker Section */}
+                        <View style={styles.imageSection}>
+                            <Text style={styles.label}>Photos (Max 5)</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageScroll}>
+                                {selectedImages.map((uri, idx) => (
+                                    <View key={idx} style={styles.imageContainer}>
+                                        <Image source={{ uri }} style={styles.previewImage} />
+                                        <TouchableOpacity style={styles.deleteBadge} onPress={() => removeImage(idx)}>
+                                            <MaterialCommunityIcons name="close-circle" size={20} color={COLORS.error} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                                {selectedImages.length < 5 && (
+                                    <TouchableOpacity style={styles.uploadBox} onPress={pickImages}>
+                                        <MaterialCommunityIcons name="camera-plus" size={30} color={COLORS.primary} />
+                                        <Text style={styles.uploadBoxText}>Add Photo</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </ScrollView>
+                        </View>
                     </>
                 )}
 
@@ -324,5 +427,15 @@ const styles = StyleSheet.create({
     },
     urgentToggle: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg, gap: 8 },
     urgentText: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
-    postButton: { marginTop: SPACING.md, marginBottom: SPACING.xl }
+    postButton: { marginTop: SPACING.md, marginBottom: SPACING.xl },
+    imageSection: { marginBottom: SPACING.lg },
+    imageScroll: { gap: SPACING.md, paddingVertical: 4 },
+    imageContainer: { position: 'relative', width: 90, height: 90, borderRadius: BORDER_RADIUS.md, overflow: 'hidden' },
+    previewImage: { width: 90, height: 90, borderRadius: BORDER_RADIUS.md },
+    deleteBadge: { position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 10 },
+    uploadBox: {
+        width: 90, height: 90, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderStyle: 'dashed',
+        borderColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.white, gap: 4,
+    },
+    uploadBoxText: { fontSize: 11, color: COLORS.primary, fontWeight: '700' },
 });

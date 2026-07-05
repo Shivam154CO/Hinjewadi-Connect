@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -7,16 +7,15 @@ import {
     TouchableOpacity,
     ScrollView,
     TextInput,
-    Dimensions,
     ActivityIndicator,
     RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { COLORS, SHADOWS } from '../../theme/theme';
 import { RoomCard } from '../../components/RoomCard';
-import { Room, MainTabScreenProps } from '../../types';
+import { MainTabScreenProps } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { roomService } from '../../services/roomService';
+import { useRooms } from '../../hooks/useRooms';
 import { PHASE_COORDS, PhaseKey, sortByPhaseDistance } from '../../utils/geoUtils';
 import { useAuth } from '../../context/AuthContext';
 
@@ -29,34 +28,15 @@ const CATEGORIES = [
 
 export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation }) => {
     const { user } = useAuth();
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<'recent' | 'distance'>('recent');
     const [selectedPhase, setSelectedPhase] = useState<PhaseKey>((user?.area as PhaseKey) || 'Phase 1');
 
-    useEffect(() => {
-        fetchRooms();
-    }, []);
-
-    const fetchRooms = async () => {
-        try {
-            setLoading(true);
-            const data = await roomService.getRooms();
-            setRooms(data);
-        } catch (error) {
-            console.error('Failed to fetch rooms:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data: rooms = [], isLoading, isRefetching, refetch } = useRooms();
 
     const handleRefresh = async () => {
-        setRefreshing(true);
-        await fetchRooms();
-        setRefreshing(false);
+        await refetch();
     };
 
     const filteredRooms = rooms.filter(room => {
@@ -157,9 +137,9 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
             </View>
 
             {/* Result count */}
-            {!loading && <Text style={styles.resultCount}>Found {sortedRooms.length} listings for you</Text>}
+            {!isLoading && <Text style={styles.resultCount}>Found {sortedRooms.length} listings for you</Text>}
 
-            {loading && !refreshing ? (
+            {isLoading && !isRefetching ? (
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                     <Text style={styles.loaderText}>Finding the best stays for you...</Text>
@@ -171,7 +151,7 @@ export const RoomsScreen: React.FC<MainTabScreenProps<'Rooms'>> = ({ navigation 
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} colors={[COLORS.primary]} />
                     }
                     renderItem={({ item }) => (
                         <RoomCard

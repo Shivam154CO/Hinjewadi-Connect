@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MainTabScreenProps, ServiceProvider } from '../../types';
-import { providerService } from '../../services/providerService';
+import { useProviders } from '../../hooks/useProviders';
 import { ProviderCard } from '../../components/ProviderCard';
 
 const CATEGORIES = [
@@ -26,31 +26,17 @@ const CATEGORIES = [
 ];
 
 export const ServicesScreen: React.FC<MainTabScreenProps<'Services'>> = ({ navigation }) => {
-    const [providers, setProviders] = useState<ServiceProvider[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('All');
-
-    useEffect(() => {
-        fetchProviders();
-    }, []);
-
-    const fetchProviders = async () => {
-        try {
-            setLoading(true);
-            const data = await providerService.getProviders();
-            setProviders(data);
-        } catch (error) {
-            console.error('Failed to fetch providers:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    
+    const { 
+        data: providers = [], 
+        isLoading, 
+        isRefetching, 
+        refetch 
+    } = useProviders();
 
     const handleRefresh = async () => {
-        setRefreshing(true);
-        await fetchProviders();
-        setRefreshing(false);
+        await refetch();
     };
 
     const filteredProviders = providers.filter(p => {
@@ -103,7 +89,7 @@ export const ServicesScreen: React.FC<MainTabScreenProps<'Services'>> = ({ navig
                 </ScrollView>
             </View>
 
-            {loading && !refreshing ? (
+            {isLoading && !isRefetching ? (
                 <View style={styles.loader}>
                     <ActivityIndicator size="large" color={COLORS.primary} />
                     <Text style={styles.loaderText}>Finding trusted service providers...</Text>
@@ -115,7 +101,7 @@ export const ServicesScreen: React.FC<MainTabScreenProps<'Services'>> = ({ navig
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} colors={[COLORS.primary]} />
                     }
                     renderItem={({ item }) => (
                         <ProviderCard

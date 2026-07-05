@@ -16,40 +16,43 @@ import { PrimaryButton } from '../../components/PrimaryButton';
 import { executeContact, ContactInfo } from '../../utils/contactUtils';
 import { MainStackScreenProps, Room } from '../../types';
 import { roomService } from '../../services/roomService';
-import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
+import { useRoomDetail } from '../../hooks/useRooms';
 import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser } from '../../utils/trustSafetyUtils';
+import { useAuth } from '../../context/AuthContext';
+import { TrustInfoCard } from '../../components/TrustBadges';
+import { trustService } from '../../services/trustService';
+import { ContactSheet, QuickContactBar } from '../../components/ContactSheet';
 
 export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({ route, navigation }) => {
     const { roomId } = route.params;
-    const [room, setRoom] = useState<Room | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
     const [isSaved, setIsSaved] = useState(false);
     const [isOccupied, setIsOccupied] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
+    const [trustProfile, setTrustProfile] = useState<any>(null);
+    const [contactSheetVisible, setContactSheetVisible] = useState(false);
+
+    const { data: room, isLoading, error } = useRoomDetail(roomId);
 
     useEffect(() => {
-        fetchRoom();
-    }, [roomId]);
+        if (room) {
+            setIsOccupied(room.status === 'Occupied');
+            // Increment View
+            roomService.incrementViews(roomId).catch(() => { });
 
-    const fetchRoom = async () => {
-        try {
-            setLoading(true);
-            const data = await roomService.getRoomById(roomId);
-            if (data) {
-                setRoom(data);
-                setIsOccupied(data.status === 'Occupied');
-                // Increment View
-                roomService.incrementViews(roomId).catch(() => { });
+            // Fetch owner's trust profile
+            if (room.ownerId) {
+                trustService.getTrustProfile(room.ownerId)
+                    .then(profile => {
+                        setTrustProfile(profile);
+                    })
+                    .catch(err => console.error('[RoomDetailScreen] Error fetching trust profile:', err));
             }
-        } catch (error) {
-            console.error('Failed to fetch room:', error);
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [room, roomId]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <View style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
@@ -57,7 +60,7 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
         );
     }
 
-    if (!room) {
+    if (error || !room) {
         return (
             <View style={[styles.container, styles.center]}>
                 <Text style={styles.errorText}>Room listing not found.</Text>
@@ -68,7 +71,7 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
         );
     }
 
-    const isOwner = false; // logic for owner comparison
+    const isOwner = !!(user && user.id === room.ownerId);
 
     const roomContact: ContactInfo = {
         id: room.id,
@@ -204,16 +207,20 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                         </View>
                     </View>
 
-                    {/* Trust & Verification */}
-                    <View style={[styles.section, { padding: 0, overflow: 'hidden', marginTop: SPACING.xl, backgroundColor: 'transparent' }]}>
-                        <TrustInfoCard
-                            verificationStatus="verified"
-                            trustScore={75}
-                            totalReviews={12}
-                            averageRating={4.2}
-                            joinedAt="2024-10-20"
-                        />
-                    </View>
+                    {/* Trust Profile Card */}
+                    {trustProfile && (
+                        <View style={{ marginTop: SPACING.md }}>
+                            <TrustInfoCard
+                                verificationStatus={trustProfile.verificationStatus}
+                                trustScore={trustProfile.trustScore}
+                                totalReviews={trustProfile.totalReviews}
+                                averageRating={trustProfile.averageRating}
+                                joinedAt={trustProfile.joinedAt}
+                            />
+                        </View>
+                    )}
+
+                    {/* Room info stats */}
 
                     {/* Report & Safety */}
                     <View style={[styles.section, { marginTop: SPACING.lg, padding: SPACING.md, backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.lg, ...SHADOWS.light }]}>
@@ -227,7 +234,8 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                         <ReportBlockActions
                             onReport={() => setReportVisible(true)}
                             onBlock={() => confirmBlock('Owner', async () => {
-                                await blockUser('currentUser', room.ownerId, 'Owner', room.contactPhone, 'Manually blocked');
+                                if (!user) return;
+                                await blockUser(user.id, room.ownerId, 'Owner', room.contactPhone, 'Manually blocked');
                             })}
                         />
                     </View>
@@ -235,17 +243,18 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                 <View style={{ height: 100 }} />
             </ScrollView>
 
-            <View style={styles.footerActions}>
-                <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
-                    <MaterialCommunityIcons name="whatsapp" size={24} color={COLORS.white} />
-                </TouchableOpacity>
-                <PrimaryButton
-                    title="Call Owner"
-                    onPress={handleCall}
-                    style={styles.callButton}
-                    textStyle={{ fontSize: 18 }}
-                />
-            </View>
+            {/* Bottom Contact Bar */}
+            <QuickContactBar
+                contact={roomContact}
+                onShowContactSheet={() => setContactSheetVisible(true)}
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+            />
+
+            <ContactSheet
+                visible={contactSheetVisible}
+                onClose={() => setContactSheetVisible(false)}
+                contact={roomContact}
+            />
 
             <ReportSheet
                 visible={reportVisible}
@@ -253,7 +262,7 @@ export const RoomDetailScreen: React.FC<MainStackScreenProps<'RoomDetail'>> = ({
                 targetId={room.id}
                 targetType="room"
                 targetName={room.title}
-                reporterId="currentUser"
+                reporterId={user?.id ?? ''}
                 targetUserId={room.ownerId}
                 targetUserName="Owner"
                 targetUserPhone={room.contactPhone}

@@ -3,19 +3,26 @@ import { Job, JobSeekerProfile } from '../types';
 
 export const jobService = {
     async getJobs(limit: number = 20, offset: number = 0): Promise<Job[]> {
-        const { data, error } = await supabase
-            .from('jobs')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .range(offset, offset + limit - 1);
+        try {
+            const { data, error } = await supabase
+                .from('jobs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
 
-        if (error) {
-            console.error('Error fetching jobs:', error);
-            throw error;
+            if (error) {
+                console.error('Error fetching jobs:', error.message || error);
+                throw error;
+            }
+
+            return (data || []).map(this.mapJob);
+        } catch (e) {
+            console.error('Exception in getJobs:', e);
+            throw e;
         }
-
-        return (data || []).map(this.mapJob);
     },
+
+
 
     async getJobById(id: string): Promise<Job | null> {
         const { data, error } = await supabase
@@ -94,6 +101,7 @@ export const jobService = {
         const { data, error } = await supabase
             .from('job_seeker_profiles')
             .insert({
+                user_id: profile.userId,
                 name: profile.name,
                 phone: profile.phone,
                 category: profile.category,
@@ -142,6 +150,28 @@ export const jobService = {
         }
     },
 
+    async getJobSeekers(limit: number = 30, category?: string): Promise<JobSeekerProfile[]> {
+        try {
+            let query = supabase
+                .from('job_seeker_profiles')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            if (category && category !== 'All') {
+                query = query.eq('category', category);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            return (data || []).map(this.mapJobSeekerProfile);
+        } catch (e) {
+            console.error('Error fetching job seekers:', e);
+            throw e;
+        }
+    },
+
+
     async incrementViews(id: string): Promise<void> {
         await supabase.rpc('increment_job_views', { job_id: id });
     },
@@ -184,6 +214,7 @@ export const jobService = {
     mapJobSeekerProfile(row: any): JobSeekerProfile {
         return {
             id: row.id,
+            userId: row.user_id,
             name: row.name,
             phone: row.phone,
             category: row.category,

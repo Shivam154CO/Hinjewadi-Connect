@@ -14,7 +14,7 @@ interface CategoryItemProps {
 export const CategoryItem = ({ title, icon, color = COLORS.primary, onPress }: CategoryItemProps) => (
     <TouchableOpacity style={styles.categoryItem} onPress={onPress} activeOpacity={0.75}>
         <View style={[styles.categoryIcon, { backgroundColor: color }]}>
-            <MaterialCommunityIcons name={icon as any} size={22} color="#FFFFFF" />
+            <MaterialCommunityIcons name={icon as any} size={18} color="#FFFFFF" />
         </View>
         <Text style={styles.categoryTitle}>{title}</Text>
     </TouchableOpacity>
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     // Category
     categoryItem: { alignItems: 'center', flex: 1 },
     categoryIcon: {
-        width: 58, height: 58, borderRadius: 18,
-        alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-        ...SHADOWS.light,
+        width: 42, height: 42, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center', marginBottom: 6,
+        ...SHADOWS.soft,
     },
-    categoryTitle: { fontSize: 12, fontWeight: '600', color: '#3C3C43', textAlign: 'center' },
+    categoryTitle: { fontSize: 10, fontWeight: '600', color: '#8E8E93', textAlign: 'center' },
 
     // Featured Card
     featuredCard: {

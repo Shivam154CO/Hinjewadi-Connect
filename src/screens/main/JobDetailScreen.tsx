@@ -17,35 +17,36 @@ import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
 import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser, addToBlockedList } from '../../utils/trustSafetyUtils';
 import { jobService } from '../../services/jobService';
+import { useJobDetail } from '../../hooks/useJobs';
+import { useAuth } from '../../context/AuthContext';
+import { trustService } from '../../services/trustService';
 
 export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ route, navigation }) => {
     const { jobId } = route.params;
-    const [job, setJob] = useState<Job | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
     const [contactSheetVisible, setContactSheetVisible] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
+    const [trustProfile, setTrustProfile] = useState<any>(null);
+
+    const { data: job, isLoading, error } = useJobDetail(jobId);
 
     useEffect(() => {
-        fetchJob();
-    }, [jobId]);
+        if (job) {
+            // Increment View
+            jobService.incrementViews(jobId).catch(() => { });
 
-    const fetchJob = async () => {
-        try {
-            setLoading(true);
-            const data = await jobService.getJobById(jobId);
-            if (data) {
-                setJob(data);
-                // Increment View
-                jobService.incrementViews(jobId).catch(() => { });
+            // Fetch employer's trust profile
+            if (job.employerId) {
+                trustService.getTrustProfile(job.employerId)
+                    .then(profile => {
+                        setTrustProfile(profile);
+                    })
+                    .catch(err => console.error('[JobDetailScreen] Error fetching trust profile:', err));
             }
-        } catch (error) {
-            console.error('Failed to fetch job:', error);
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [job, jobId]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
@@ -53,7 +54,7 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
         );
     }
 
-    if (!job) {
+    if (error || !job) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
                 <Text style={styles.errorText}>Job listing not found.</Text>
@@ -90,7 +91,7 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
 
                 {/* Hero */}
                 <View style={styles.heroCard}>
-                    <View style={styles.heroImagePlaceholder}>
+                    <View style={styles.heroIconFallback}>
                         <MaterialCommunityIcons name="office-building" size={60} color={COLORS.border} />
                     </View>
 
@@ -198,16 +199,18 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
                     </View>
                 </View>
 
-                {/* Trust & Verification */}
-                <View style={[styles.section, { padding: 0, overflow: 'hidden' }]}>
-                    <TrustInfoCard
-                        verificationStatus="verified"
-                        trustScore={82}
-                        totalReviews={23}
-                        averageRating={4.6}
-                        joinedAt="2024-09-15"
-                    />
-                </View>
+                {/* Real trust profile loaded per employer */}
+                {trustProfile && (
+                    <View style={{ marginHorizontal: SPACING.md, marginBottom: SPACING.md }}>
+                        <TrustInfoCard
+                            verificationStatus={trustProfile.verificationStatus}
+                            trustScore={trustProfile.trustScore}
+                            totalReviews={trustProfile.totalReviews}
+                            averageRating={trustProfile.averageRating}
+                            joinedAt={trustProfile.joinedAt}
+                        />
+                    </View>
+                )}
 
                 {/* Report & Safety */}
                 <View style={styles.section}>
@@ -221,7 +224,8 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
                     <ReportBlockActions
                         onReport={() => setReportVisible(true)}
                         onBlock={() => confirmBlock(job.company, async () => {
-                            await blockUser('currentUser', job.employerId, job.company, job.contactPhone, 'Manually blocked');
+                            if (!user) return;
+                            await blockUser(user.id, job.employerId, job.company, job.contactPhone, 'Manually blocked');
                         })}
                     />
                 </View>
@@ -230,7 +234,11 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
             </ScrollView>
 
             {/* Bottom Action Bar */}
-            <QuickContactBar contact={jobContact} style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+            <QuickContactBar
+                contact={jobContact}
+                onShowContactSheet={() => setContactSheetVisible(true)}
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+            />
 
             <ContactSheet
                 visible={contactSheetVisible}
@@ -244,7 +252,7 @@ export const JobDetailScreen: React.FC<MainStackScreenProps<'JobDetail'>> = ({ r
                 targetId={job.id}
                 targetType="job"
                 targetName={job.title}
-                reporterId="currentUser"
+                reporterId={user?.id ?? ''}
                 targetUserId={job.employerId}
                 targetUserName={job.company}
                 targetUserPhone={job.contactPhone}
@@ -310,7 +318,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         ...SHADOWS.light,
     },
-    heroImagePlaceholder: {
+    heroIconFallback: {
         width: '100%',
         height: 180,
         backgroundColor: COLORS.white + '05',

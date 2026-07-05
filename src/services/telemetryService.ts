@@ -10,7 +10,7 @@ class TelemetryService {
 
     init() {
         this.sessionId = Math.random().toString(36).substring(7);
-        if (!__DEV__) {
+        if (__DEV__) {
             console.log(`[Telemetry] Session ${this.sessionId} initialized.`);
         }
     }
@@ -58,10 +58,8 @@ class TelemetryService {
     }
 
     private pushToRemote(level: string, data: any) {
-        // Placeholder for an actual HTTP POST to a log aggregator 
-        // Logic-driven pruning to save bandwidth in production
-        const prunedData = JSON.stringify(data).substring(0, 1000);
-        console.log(`[Telemetry Remote Sync - ${level}]`, prunedData);
+        // Integration point for production telemetry (Datadog/Sentry)
+        // Silently swallow if not configured to avoid console flooding
     }
 }
 

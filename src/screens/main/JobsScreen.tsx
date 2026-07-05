@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -7,13 +7,14 @@ import {
     TouchableOpacity,
     ScrollView,
     ActivityIndicator,
-    TextInput
+    TextInput,
+    RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
+import { COLORS, SHADOWS } from '../../theme/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { MainTabScreenProps, Job } from '../../types';
-import { jobService } from '../../services/jobService';
+import { MainTabScreenProps } from '../../types';
+import { useJobs } from '../../hooks/useJobs';
 import { PHASE_COORDS, PhaseKey, sortByPhaseDistance } from '../../utils/geoUtils';
 import { useAuth } from '../../context/AuthContext';
 import { JobCard } from '../../components/JobCard';
@@ -34,8 +35,6 @@ const TABS = ['Browse Jobs', 'My History'];
 
 export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation }) => {
     const { user } = useAuth();
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState(0);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [selectedArea, setSelectedArea] = useState('All');
@@ -43,20 +42,10 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
     const [sortBy, setSortBy] = useState<'recent' | 'distance'>('recent');
     const [selectedPhase, setSelectedPhase] = useState<PhaseKey>((user?.area as PhaseKey) || 'Phase 1');
 
-    useEffect(() => {
-        fetchJobs();
-    }, []);
+    const { data: jobs = [], isLoading, isRefetching, refetch } = useJobs();
 
-    const fetchJobs = async () => {
-        try {
-            setLoading(true);
-            const data = await jobService.getJobs();
-            setJobs(data);
-        } catch (error) {
-            console.error('Failed to fetch jobs:', error);
-        } finally {
-            setLoading(false);
-        }
+    const handleRefresh = async () => {
+        await refetch();
     };
 
     const filteredJobs = jobs.filter(job => {
@@ -117,6 +106,24 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                 </View>
             </View>
 
+            {/* Find Workers Banner — visible to employer role */}
+            {user?.role === 'employer' && (
+                <TouchableOpacity
+                    style={styles.workerBanner}
+                    onPress={() => (navigation as any).navigate('JobSeekers')}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.workerBannerIcon}>
+                        <MaterialCommunityIcons name="account-group" size={22} color="#00C896" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.workerBannerTitle}>Find Workers</Text>
+                        <Text style={styles.workerBannerSub}>Browse job seekers looking for work near you</Text>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={20} color="#636366" />
+                </TouchableOpacity>
+            )}
+
             {activeTab === 0 ? (
                 <>
                     <View style={styles.filterSection}>
@@ -155,7 +162,7 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                         </ScrollView>
                     </View>
 
-                    {loading ? (
+                    {isLoading && !isRefetching ? (
                         <View style={styles.loader}>
                             <ActivityIndicator size="large" color={COLORS.primary} />
                             <Text style={styles.loaderText}>Searching for opportunities...</Text>
@@ -166,6 +173,9 @@ export const JobsScreen: React.FC<MainTabScreenProps<'Jobs'>> = ({ navigation })
                             keyExtractor={(item) => item.id}
                             contentContainerStyle={styles.listContent}
                             showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} colors={[COLORS.primary]} />
+                            }
                             renderItem={({ item }) => (
                                 <JobCard
                                     job={item}
@@ -260,6 +270,36 @@ const styles = StyleSheet.create({
         backgroundColor: '#00C896', alignItems: 'center', justifyContent: 'center',
         shadowColor: '#00C896', shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4, shadowRadius: 14, elevation: 8,
+    },
+    workerBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1C1C1E',
+        borderRadius: 14,
+        marginHorizontal: 20,
+        marginBottom: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#2C2C2E',
+        gap: 12,
+    },
+    workerBannerIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        backgroundColor: '#00C89615',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    workerBannerTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#FFFFFF',
+    },
+    workerBannerSub: {
+        fontSize: 12,
+        color: '#AEAEB2',
+        marginTop: 2,
     },
 });
 

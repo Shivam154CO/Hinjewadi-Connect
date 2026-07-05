@@ -42,6 +42,7 @@ export type MainStackParamList = {
     HelpSupport: undefined;
     Legal: undefined;
     ChatRoom: { chatId: string, name: string };
+    JobSeekers: undefined;
 };
 
 export type MainTabParamList = {
@@ -110,6 +111,7 @@ export interface Job {
 
 export interface JobSeekerProfile {
     id: string;
+    userId?: string;
     name: string;
     phone: string;
     category: JobCategory;
@@ -177,7 +179,7 @@ export interface Report {
     targetType: ReportTargetType;
     reason: ReportReason;
     description: string;
-    status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+    status: 'pending' | 'investigating' | 'resolved' | 'dismissed';
     createdAt: string;
 }
 

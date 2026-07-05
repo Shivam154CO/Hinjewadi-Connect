@@ -3,20 +3,27 @@ import { Room } from '../types';
 
 export const roomService = {
     async getRooms(limit: number = 20, offset: number = 0): Promise<Room[]> {
-        const { data, error } = await supabase
-            .from('rooms')
-            .select('*')
-            .eq('status', 'Available')
-            .order('created_at', { ascending: false })
-            .range(offset, offset + limit - 1);
+        try {
+            const { data, error } = await supabase
+                .from('rooms')
+                .select('*')
+                .eq('status', 'Available')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
 
-        if (error) {
-            console.error('Error fetching rooms:', error);
-            throw error;
+            if (error) {
+                console.error('Error fetching rooms:', error.message || error);
+                throw error;
+            }
+
+            return (data || []).map(this.mapRoom);
+        } catch (e) {
+            console.error('Exception in getRooms:', e);
+            throw e;
         }
-
-        return (data || []).map(this.mapRoom);
     },
+
+
 
     async getRoomById(id: string): Promise<Room | null> {
         const { data, error } = await supabase
@@ -63,22 +70,23 @@ export const roomService = {
     },
 
     async updateRoom(id: string, updates: Partial<Room>): Promise<Room> {
+        const payload: Record<string, any> = {};
+        if (updates.title !== undefined) payload.title = updates.title;
+        if (updates.description !== undefined) payload.description = updates.description;
+        if (updates.price !== undefined) payload.price = updates.price;
+        if (updates.deposit !== undefined) payload.deposit = updates.deposit;
+        if (updates.area !== undefined) payload.area = updates.area;
+        if (updates.type !== undefined) payload.type = updates.type;
+        if (updates.furnishing !== undefined) payload.furnishing = updates.furnishing;
+        if (updates.genderPreference !== undefined) payload.gender_preference = updates.genderPreference;
+        if (updates.amenities !== undefined) payload.amenities = updates.amenities;
+        if (updates.images !== undefined) payload.images = updates.images;
+        if (updates.status !== undefined) payload.status = updates.status;
+        if (updates.contactPhone !== undefined) payload.contact_phone = updates.contactPhone;
+
         const { data, error } = await supabase
             .from('rooms')
-            .update({
-                title: updates.title,
-                description: updates.description,
-                price: updates.price,
-                deposit: updates.deposit,
-                area: updates.area,
-                type: updates.type,
-                furnishing: updates.furnishing,
-                gender_preference: updates.genderPreference,
-                amenities: updates.amenities,
-                images: updates.images,
-                status: updates.status,
-                contact_phone: updates.contactPhone,
-            })
+            .update(payload)
             .eq('id', id)
             .select()
             .single();

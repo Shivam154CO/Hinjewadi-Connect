@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../theme/theme';
@@ -18,32 +19,11 @@ import { VerifiedCheck, TrustInfoCard } from '../../components/TrustBadges';
 import { ReportSheet, ReportBlockActions } from '../../components/ReportSheet';
 import { confirmBlock, blockUser } from '../../utils/trustSafetyUtils';
 import { providerService } from '../../services/providerService';
+import { useProviderDetail, useAddReview } from '../../hooks/useProviders';
+import { useAuth } from '../../context/AuthContext';
+import { trustService } from '../../services/trustService';
 
-// Mock data — in production this would come from an API
-const MOCK_PROVIDER: ServiceProvider = {
-    id: '1',
-    name: 'Sunita Devi',
-    phone: '9000000001',
-    whatsapp: '9000000001',
-    category: 'Maid',
-    experience: '5 years',
-    rating: 4.8,
-    totalRatings: 47,
-    areas: ['Phase 1', 'Phase 2'],
-    availability: 'Available',
-    workingHours: '8 AM - 12 PM',
-    description: 'Experienced maid with expertise in cleaning, cooking, and household management. Known for punctuality and attention to detail. Previously worked in premium societies.',
-    skills: ['Cleaning', 'Utensils', 'Mopping', 'Dusting', 'Cooking Basics', 'Laundry'],
-    priceRange: '₹3,000 - ₹5,000/mo',
-    avatarColor: '#E8D5F5',
-    initial: 'SD',
-    reviews: [
-        { id: 'r1', userName: 'Priya Sharma', rating: 5, comment: 'Very punctual and thorough! She takes great care of the house.', date: '2 weeks ago' },
-        { id: 'r2', userName: 'Rahul Mehta', rating: 4, comment: 'Good work, reliable. Sometimes takes leave without notice.', date: '1 month ago' },
-        { id: 'r3', userName: 'Anita Desai', rating: 5, comment: 'Best maid we have had. Highly recommended!', date: '2 months ago' },
-    ],
-    createdAt: new Date().toISOString(),
-};
+
 
 const StarRating = ({ rating, size = 18, interactive = false, onRate }: {
     rating: number;
@@ -86,36 +66,36 @@ const ReviewCard = ({ review }: { review: ServiceReview }) => (
 
 export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'ServiceProviderDetail'>> = ({ navigation, route }) => {
     const { providerId } = route.params;
-    const [provider, setProvider] = useState<ServiceProvider | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
     const [showRateForm, setShowRateForm] = useState(false);
     const [userRating, setUserRating] = useState(0);
     const [userComment, setUserComment] = useState('');
+    const { mutate: submitReview, isPending: isSubmittingReview } = useAddReview();
 
     const [contactSheetVisible, setContactSheetVisible] = useState(false);
     const [reportVisible, setReportVisible] = useState(false);
+    const [trustProfile, setTrustProfile] = useState<any>(null);
+
+    const { data: provider, isLoading, error } = useProviderDetail(providerId);
 
     useEffect(() => {
-        fetchProvider();
-    }, [providerId]);
+        if (provider) {
+            // Increment View
+            providerService.incrementViews(providerId).catch(() => { });
 
-    const fetchProvider = async () => {
-        try {
-            setLoading(true);
-            const data = await providerService.getProviderById(providerId);
-            if (data) {
-                setProvider(data);
-                // Increment View
-                providerService.incrementViews(providerId).catch(() => { });
+            // Fetch provider trust profile
+            const targetUserId = provider.userId || provider.id;
+            if (targetUserId) {
+                trustService.getTrustProfile(targetUserId)
+                    .then(profile => {
+                        setTrustProfile(profile);
+                    })
+                    .catch(err => console.error('[ServiceProviderDetailScreen] Error fetching trust profile:', err));
             }
-        } catch (error) {
-            console.error('Failed to fetch provider:', error);
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [provider, providerId]);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
@@ -123,7 +103,7 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
         );
     }
 
-    if (!provider) {
+    if (error || !provider) {
         return (
             <SafeAreaView style={[styles.container, styles.center]}>
                 <Text style={styles.errorText}>Provider not found.</Text>
@@ -145,10 +125,36 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
     };
 
     const handleSubmitRating = () => {
-        // In production: POST to API
-        setShowRateForm(false);
-        setUserRating(0);
-        setUserComment('');
+        if (!user) {
+            Alert.alert('Sign In Required', 'Please sign in to leave a review.');
+            return;
+        }
+        if (userRating === 0) {
+            Alert.alert('Rating Required', 'Please select a star rating before submitting.');
+            return;
+        }
+        submitReview(
+            {
+                providerId,
+                review: {
+                    userName: user.name,
+                    rating: userRating,
+                    comment: userComment,
+                    userId: user.id,
+                },
+            },
+            {
+                onSuccess: () => {
+                    Alert.alert('Review Submitted', 'Thank you for your feedback!');
+                    setShowRateForm(false);
+                    setUserRating(0);
+                    setUserComment('');
+                },
+                onError: () => {
+                    Alert.alert('Error', 'Failed to submit review. Please try again.');
+                },
+            }
+        );
     };
 
     const statusColors: Record<string, { bg: string; text: string }> = {
@@ -264,6 +270,19 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
                     </View>
                 </View>
 
+                {/* Real trust profile loaded per provider */}
+                {trustProfile && (
+                    <View style={{ marginHorizontal: SPACING.md, marginBottom: SPACING.md }}>
+                        <TrustInfoCard
+                            verificationStatus={trustProfile.verificationStatus}
+                            trustScore={trustProfile.trustScore}
+                            totalReviews={trustProfile.totalReviews}
+                            averageRating={trustProfile.averageRating}
+                            joinedAt={trustProfile.joinedAt}
+                        />
+                    </View>
+                )}
+
                 {/* Reviews */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
@@ -308,16 +327,7 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
 
                 <View style={{ height: 120 }} />
 
-                {/* Trust & Verification */}
-                <View style={[styles.section, { padding: 0, overflow: 'hidden' }]}>
-                    <TrustInfoCard
-                        verificationStatus="verified"
-                        trustScore={88}
-                        totalReviews={provider.totalRatings}
-                        averageRating={provider.rating}
-                        joinedAt="2024-06-10"
-                    />
-                </View>
+                {/* Safety section */}
 
                 {/* Report & Safety */}
                 <View style={styles.section}>
@@ -331,7 +341,8 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
                     <ReportBlockActions
                         onReport={() => setReportVisible(true)}
                         onBlock={() => confirmBlock(provider.name, async () => {
-                            await blockUser('currentUser', provider.id, provider.name, provider.phone, 'Manually blocked');
+                            if (!user) return;
+                            await blockUser(user.id, provider.id, provider.name, provider.phone, 'Manually blocked');
                         })}
                     />
                 </View>
@@ -340,7 +351,11 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
             </ScrollView>
 
             {/* Bottom Contact Bar */}
-            <QuickContactBar contact={providerContact} style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} />
+            <QuickContactBar
+                contact={providerContact}
+                onShowContactSheet={() => setContactSheetVisible(true)}
+                style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+            />
 
             <ContactSheet
                 visible={contactSheetVisible}
@@ -354,7 +369,7 @@ export const ServiceProviderDetailScreen: React.FC<MainStackScreenProps<'Service
                 targetId={provider.id}
                 targetType="service"
                 targetName={provider.name}
-                reporterId="currentUser"
+                reporterId={user?.id ?? ''}
                 targetUserId={provider.id}
                 targetUserName={provider.name}
                 targetUserPhone={provider.phone}

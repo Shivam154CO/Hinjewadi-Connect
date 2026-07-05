@@ -1,49 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/theme';
+import { useQueryClient } from '@tanstack/react-query';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../theme/theme';
 import { supabase } from '../../supabase/supabaseClient';
-import { chatService, ChatMessage } from '../../services/chatService';
+import { ChatMessage } from '../../services/chatService';
 import { useAuth } from '../../context/AuthContext';
+import { useMessages, useSendMessage } from '../../hooks/useChat';
+import { MainStackScreenProps } from '../../types';
 
-export const ChatRoomScreen = ({ route, navigation }: any) => {
+export const ChatRoomScreen: React.FC<MainStackScreenProps<'ChatRoom'>> = ({ route, navigation }) => {
     const { user } = useAuth();
-    const { chatId, name } = route.params || { chatId: '1', name: 'Unknown' };
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const { chatId, name } = route.params;
+    const queryClient = useQueryClient();
     const [inputText, setInputText] = useState('');
 
-    React.useEffect(() => {
-        // Initial Fetch
-        supabase.from('messages').select('*').eq('chat_id', chatId).order('created_at', { ascending: true })
-            .then(({ data }) => setMessages(data as any || []));
+    const { data: messages = [], isLoading } = useMessages(chatId);
+    const { mutate: sendMessageMutation } = useSendMessage();
 
+    useEffect(() => {
         // Realtime Websocket Subscription
         const channel = supabase.channel(`room_${chatId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, 
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages', 
+                filter: `chat_id=eq.${chatId}` 
+            }, 
             payload => {
-                setMessages(prev => {
-                    const isDup = prev.some(m => m.id === payload.new.id);
-                    return isDup ? prev : [...prev, payload.new as any];
+                const newMessage = payload.new as ChatMessage;
+                // Update TanStack Query cache instead of local state
+                queryClient.setQueryData(['messages', chatId], (old: ChatMessage[] | undefined) => {
+                    const exists = old?.some(m => m.id === newMessage.id);
+                    if (exists) return old;
+                    return [...(old || []), newMessage];
                 });
             })
             .subscribe();
 
         return () => { supabase.removeChannel(channel); }
-    }, [chatId]);
+    }, [chatId, queryClient]);
 
-    const sendMessage = async () => {
+    const handleSend = useCallback(() => {
         if (!inputText.trim() || !user) return;
-        const tempText = inputText;
+        const text = inputText;
         setInputText('');
         
-        // Optimistic UI update
-        const tempMsg: ChatMessage = { id: Date.now().toString(), chat_id: chatId, sender_id: user.id, text: tempText, created_at: new Date().toISOString() };
-        setMessages(prev => [...prev, tempMsg]);
-
-        // Send to backend
-        await chatService.sendMessage(chatId, user.id, tempText);
-    };
+        // Use the mutation for sending
+        sendMessageMutation({ chatId, senderId: user.id, text });
+    }, [chatId, inputText, user, sendMessageMutation]);
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -61,7 +67,7 @@ export const ChatRoomScreen = ({ route, navigation }: any) => {
                 <FlatList
                     data={messages}
                     keyExtractor={item => item.id}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+                    contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.xl }}
                     renderItem={({ item }) => (
                         <View style={[styles.bubble, item.sender_id === user?.id ? styles.bubbleMe : styles.bubbleThem]}>
                             <Text style={[styles.bubbleText, item.sender_id === user?.id && styles.bubbleTextMe]}>{item.text}</Text>
@@ -76,12 +82,13 @@ export const ChatRoomScreen = ({ route, navigation }: any) => {
                     <TextInput
                         style={styles.input}
                         placeholder="Type a message..."
+                        placeholderTextColor={COLORS.textMuted}
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
                     />
-                    <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-                        <MaterialCommunityIcons name="send" size={20} color="#FFF" />
+                    <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
+                        <MaterialCommunityIcons name="send" size={20} color={COLORS.white} />
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -90,17 +97,50 @@ export const ChatRoomScreen = ({ route, navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F8FAFC' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    container: { flex: 1, backgroundColor: COLORS.background },
+    header: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        padding: SPACING.md, 
+        backgroundColor: COLORS.surface, 
+        borderBottomWidth: 1, 
+        borderBottomColor: COLORS.border 
+    },
     headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text },
-    bubble: { maxWidth: '80%', padding: 12, borderRadius: 20, marginBottom: 12 },
-    bubbleThem: { backgroundColor: '#FFF', alignSelf: 'flex-start', borderBottomLeftRadius: 4 },
-    bubbleMe: { backgroundColor: '#4F46E5', alignSelf: 'flex-end', borderBottomRightRadius: 4 },
-    bubbleText: { fontSize: 15, color: '#1E293B', lineHeight: 22 },
-    bubbleTextMe: { color: '#FFF' },
-    timeText: { fontSize: 10, color: '#94A3B8', marginTop: 4, alignSelf: 'flex-end' },
-    timeTextMe: { color: '#C7D2FE' },
-    inputBox: { flexDirection: 'row', padding: 12, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#F1F5F9', alignItems: 'flex-end' },
-    input: { flex: 1, backgroundColor: '#F1F5F9', borderRadius: 20, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, maxHeight: 100, fontSize: 15 },
-    sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#4F46E5', alignItems: 'center', justifyContent: 'center', marginLeft: 12 }
+    bubble: { maxWidth: '80%', padding: 12, borderRadius: BORDER_RADIUS.lg, marginBottom: 12 },
+    bubbleThem: { backgroundColor: COLORS.surface, alignSelf: 'flex-start', borderBottomLeftRadius: 4 },
+    bubbleMe: { backgroundColor: COLORS.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
+    bubbleText: { fontSize: 15, color: COLORS.text, lineHeight: 22 },
+    bubbleTextMe: { color: COLORS.white },
+    timeText: { fontSize: 10, color: COLORS.textSecondary, marginTop: 4, alignSelf: 'flex-end' },
+    timeTextMe: { color: COLORS.white + 'CC' },
+    inputBox: { 
+        flexDirection: 'row', 
+        padding: SPACING.md, 
+        backgroundColor: COLORS.surface, 
+        borderTopWidth: 1, 
+        borderTopColor: COLORS.border, 
+        alignItems: 'flex-end' 
+    },
+    input: { 
+        flex: 1, 
+        backgroundColor: COLORS.input, 
+        borderRadius: BORDER_RADIUS.lg, 
+        paddingHorizontal: SPACING.md, 
+        paddingTop: 10, 
+        paddingBottom: 10, 
+        maxHeight: 100, 
+        fontSize: 15,
+        color: COLORS.text
+    },
+    sendBtn: { 
+        width: 44, 
+        height: 44, 
+        borderRadius: 22, 
+        backgroundColor: COLORS.primary, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginLeft: 12 
+    }
 });

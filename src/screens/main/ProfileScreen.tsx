@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { UserRole, MainTabScreenProps } from '../../types';
 import { useTranslation } from 'react-i18next';
+import Constants from 'expo-constants';
 
 const AREAS = ['Phase 1', 'Phase 2', 'Phase 3'];
 
@@ -170,7 +171,7 @@ export const ProfileScreen: React.FC<MainTabScreenProps<'Profile'>> = ({ navigat
                     <Text style={s.logoutText}>Sign Out</Text>
                 </TouchableOpacity>
 
-                <Text style={s.version}>Hinjewadi Connect v1.2.5</Text>
+                <Text style={s.version}>Hinjewadi Connect v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
                 <View style={{ height: 110 }} />
             </ScrollView>
         </View>

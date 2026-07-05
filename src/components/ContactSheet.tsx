@@ -7,6 +7,7 @@ import {
     Modal,
     Pressable,
     Dimensions,
+    Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../theme/theme';
@@ -15,6 +16,8 @@ import { roomService } from '../services/roomService';
 import { jobService } from '../services/jobService';
 import { providerService } from '../services/providerService';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { chatService } from '../services/chatService';
 
 const { width } = Dimensions.get('window');
 
@@ -52,18 +55,48 @@ const CONTACT_OPTIONS = [
     {
         key: 'chat' as const,
         label: 'In-App Chat',
-        sublabel: 'Coming soon',
+        sublabel: 'Direct secure messaging',
         icon: 'chat-processing-outline',
         color: '#7C3AED',
         bgColor: '#F0E6FF',
-        disabled: true,
+        disabled: false,
     },
 ];
 
 export const ContactSheet: React.FC<ContactSheetProps> = ({ visible, onClose, contact }) => {
     const { user } = useAuth();
+    const navigation = useNavigation<any>();
 
     const handleAction = async (action: typeof CONTACT_OPTIONS[number]) => {
+        if (action.key === 'chat') {
+            if (!user) {
+                Alert.alert('Sign In Required', 'Please sign in to chat with other users.');
+                return;
+            }
+            if (user.id === contact.ownerId) {
+                Alert.alert('In-App Chat', 'You cannot start a chat with yourself.');
+                return;
+            }
+            if (!contact.ownerId) {
+                Alert.alert('Notice', 'This user is not registered for in-app chat.');
+                return;
+            }
+            onClose();
+            try {
+                const session = await chatService.findOrCreateSession(user.id, contact.ownerId);
+                if (session) {
+                    setTimeout(() => {
+                        navigation.navigate('ChatRoom', { chatId: session.id, name: contact.name });
+                    }, 300);
+                } else {
+                    Alert.alert('Error', 'Failed to start in-app chat session.');
+                }
+            } catch (e) {
+                Alert.alert('Error', 'Failed to start in-app chat session.');
+            }
+            return;
+        }
+
         if (action.disabled) {
             executeContact('chat', contact);
             return;
@@ -193,9 +226,10 @@ export const ContactSheet: React.FC<ContactSheetProps> = ({ visible, onClose, co
 interface QuickContactBarProps {
     contact: ContactInfo;
     style?: object;
+    onShowContactSheet?: () => void;
 }
 
-export const QuickContactBar: React.FC<QuickContactBarProps> = ({ contact, style }) => {
+export const QuickContactBar: React.FC<QuickContactBarProps> = ({ contact, style, onShowContactSheet }) => {
     return (
         <View style={[styles.quickBar, style]}>
             <TouchableOpacity
@@ -212,12 +246,14 @@ export const QuickContactBar: React.FC<QuickContactBarProps> = ({ contact, style
                 <MaterialCommunityIcons name="whatsapp" size={20} color="#25D366" />
                 <Text style={styles.quickWhatsappText}>WhatsApp</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.quickSmsBtn}
-                onPress={() => executeContact('sms', contact)}
-            >
-                <MaterialCommunityIcons name="message-text-outline" size={20} color={COLORS.primary} />
-            </TouchableOpacity>
+            {onShowContactSheet && (
+                <TouchableOpacity
+                    style={styles.quickChatBtn}
+                    onPress={onShowContactSheet}
+                >
+                    <MaterialCommunityIcons name="chat-processing-outline" size={20} color={COLORS.primary} />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -428,15 +464,15 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 15,
     },
-    quickSmsBtn: {
+    quickChatBtn: {
         width: 48,
         height: 48,
         borderRadius: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#E3F0FF',
+        backgroundColor: '#F0E6FF',
         borderWidth: 1,
-        borderColor: '#BDDCFF',
+        borderColor: '#E1CCFF',
     },
     // ── Contact Icons ──
     iconRow: {

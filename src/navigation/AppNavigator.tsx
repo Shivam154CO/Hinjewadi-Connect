@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { AuthNavigator } from './AuthNavigator';
 import { MainStack } from './MainStack';
 import { useAuth } from '../context/AuthContext';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { COLORS } from '../theme/theme';
 import * as Linking from 'expo-linking';
 
@@ -32,7 +32,7 @@ export const AppNavigator = () => {
     }
 
     return (
-        <NavigationContainer linking={linking as any}>
+        <NavigationContainer linking={Platform.OS === 'web' ? undefined : (linking as any)}>
             {user ? <MainStack /> : <AuthNavigator />}
         </NavigationContainer>
     );

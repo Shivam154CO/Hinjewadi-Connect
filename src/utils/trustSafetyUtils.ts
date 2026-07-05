@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { ReportReason, ReportTargetType, Report, BlockedUser, TrustProfile } from '../types';
+import { supabase } from '../supabase/supabaseClient';
 
 /**
  * Trust, Safety & Quality Utility
@@ -18,61 +19,96 @@ export const REPORT_REASONS: { key: ReportReason; label: string; icon: string; d
     { key: 'other', label: 'Other', icon: 'dots-horizontal-circle-outline', description: 'Something else not listed above' },
 ];
 
-// ── Submit a report (mock — in production: POST /api/reports) ──
+// ── Submit a report to DB ──
 export const submitReport = async (
     reporterId: string,
     targetId: string,
     targetType: ReportTargetType,
     reason: ReportReason,
     description: string,
-): Promise<Report> => {
-    // Simulate network call
-    await new Promise(resolve => setTimeout(resolve, 800));
+): Promise<Report | null> => {
+    try {
+        const { data, error } = await supabase
+            .from('reports')
+            .insert({
+                reporter_id: reporterId,
+                target_id: targetId,
+                target_type: targetType,
+                reason: reason,
+                description: description,
+                status: 'pending'
+            })
+            .select()
+            .single();
 
-    const report: Report = {
-        id: `rpt_${Date.now()}`,
-        reporterId,
-        targetId,
-        targetType,
-        reason,
-        description,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-    };
-
-    // In production: await fetch('/api/reports', { method: 'POST', body: JSON.stringify(report) });
-    console.log('[TrustSafety] Report submitted:', report);
-    return report;
+        if (error) throw error;
+        
+        return {
+            id: data.id,
+            reporterId: data.reporter_id,
+            targetId: data.target_id,
+            targetType: data.target_type,
+            reason: data.reason,
+            description: data.description,
+            status: data.status,
+            createdAt: data.created_at,
+        };
+    } catch (err) {
+        console.error('[TrustSafety] Error submitting report:', err);
+        return null;
+    }
 };
 
-// ── Block a user (mock — in production: POST /api/users/:id/block) ──
+// ── Block a user in DB ──
 export const blockUser = async (
     userId: string,
     blockedUserId: string,
     blockedName: string,
     blockedPhone: string,
     reason: string,
-): Promise<BlockedUser> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
+): Promise<BlockedUser | null> => {
+    try {
+        const { data, error } = await supabase
+            .from('blocked_users')
+            .insert({
+                user_id: userId,
+                blocked_user_id: blockedUserId,
+                blocked_name: blockedName,
+                blocked_phone: blockedPhone,
+                reason: reason
+            })
+            .select()
+            .single();
 
-    const blocked: BlockedUser = {
-        id: `blk_${Date.now()}`,
-        userId,
-        blockedUserId,
-        blockedName,
-        blockedPhone,
-        reason,
-        createdAt: new Date().toISOString(),
-    };
+        if (error) throw error;
 
-    console.log('[TrustSafety] User blocked:', blocked);
-    return blocked;
+        return {
+            id: data.id,
+            userId: data.user_id,
+            blockedUserId: data.blocked_user_id,
+            blockedName: data.blocked_name,
+            blockedPhone: data.blocked_phone,
+            reason: data.reason,
+            createdAt: data.created_at,
+        };
+    } catch (err) {
+        console.error('[TrustSafety] Error blocking user:', err);
+        return null;
+    }
 };
 
 // ── Unblock a user ──
 export const unblockUser = async (blockId: string): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    console.log('[TrustSafety] User unblocked:', blockId);
+    try {
+        const { error } = await supabase
+            .from('blocked_users')
+            .delete()
+            .eq('id', blockId);
+        
+        if (error) throw error;
+    } catch (err) {
+        console.error('[TrustSafety] Error unblocking user:', err);
+    }
 };
 
 // ── Check if user is blocked ──

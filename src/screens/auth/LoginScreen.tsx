@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Dimensions, StatusBar, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { AuthScreenProps } from '../../types';
@@ -20,18 +20,27 @@ const LANGS = [
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
     const { t, i18n } = useTranslation();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [name, setName] = useState('');
-    const [focused, setFocused] = useState(false);
-    const { login, isProcessing } = useAuth();
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const { signIn, signUp, isProcessing } = useAuth();
 
     const handleContinue = async () => {
-        if (!name.trim()) {
-            errorHandler.handleValidationError('Name', 'Please enter your name');
+        if (isProcessing) return; // Guard against multiple clicks
+
+        if (!email.trim() || !password.trim() || (isSignUp && !name.trim())) {
+            errorHandler.handleValidationError('Form', 'Please fill all fields');
             return;
         }
         try {
-            const isRegistered = await login(name.trim());
-            if (!isRegistered) navigation.navigate('RoleSelection');
+            if (isSignUp) {
+                await signUp(email.trim(), password, name.trim());
+                navigation.navigate('RoleSelection');
+            } else {
+                await signIn(email.trim(), password);
+            }
         } catch (err: any) {
             errorHandler.handleAuthError(err);
         }
@@ -45,7 +54,6 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         <View style={s.root}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-            {/* Top Image Section - 50% height */}
             <View style={s.topHalf}>
                 <Image
                     source={HERO_IMAGE}
@@ -86,69 +94,120 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
                     </View>
                 </SafeAreaView>
 
-                {/* Optional Branding Overlay on Image */}
                 <View style={s.imageBranding}>
-                    <Text style={s.welcomeText}>Login to Continue</Text>
+                    <Text style={s.welcomeText}>{isSignUp ? 'Join Us' : 'Login to Continue'}</Text>
                     <Text style={s.subtitle}>Explore Hinjewadi in Detail</Text>
                 </View>
             </View>
 
             <KeyboardAvoidingView
                 style={s.content}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
-                {/* Designer Bottom Card */}
-                <View style={s.bottomCard}>
-                    <View style={s.dragIndicator} />
-                    <Text style={s.cardHeading}>Welcome back</Text>
-                    <Text style={s.cardSub}>{t('login_subtitle')}</Text>
+                <ScrollView 
+                    contentContainerStyle={{ flexGrow: 1 }} 
+                    bounces={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={s.bottomCard}>
+                        <View style={s.dragIndicator} />
+                        <Text style={s.cardHeading}>{isSignUp ? 'Create Account' : 'Welcome back'}</Text>
+                        <Text style={s.cardSub}>{isSignUp ? 'Sign up to get started' : t('login_subtitle')}</Text>
 
-                    <View style={[s.inputWrap, focused && s.inputWrapFocused]}>
-                        <MaterialCommunityIcons
-                            name="account-outline"
-                            size={22}
-                            color={focused ? COLORS.primary : COLORS.textMuted}
-                        />
-                        <TextInput
-                            style={s.input}
-                            placeholder={t('name_placeholder')}
-                            placeholderTextColor={COLORS.textMuted}
-                            value={name}
-                            onChangeText={setName}
-                            onFocus={() => setFocused(true)}
-                            onBlur={() => setFocused(false)}
-                            onSubmitEditing={handleContinue}
-                            returnKeyType="go"
-                            autoCapitalize="words"
-                        />
-                    </View>
+                        {isSignUp && (
+                            <View style={[s.inputWrap, focusedField === 'name' && s.inputWrapFocused]}>
+                                <MaterialCommunityIcons
+                                    name="account-outline"
+                                    size={22}
+                                    color={focusedField === 'name' ? COLORS.primary : COLORS.textMuted}
+                                />
+                                <TextInput
+                                    style={s.input}
+                                    placeholder="Full Name"
+                                    placeholderTextColor={COLORS.textMuted}
+                                    value={name}
+                                    onChangeText={setName}
+                                    onFocus={() => setFocusedField('name')}
+                                    onBlur={() => setFocusedField(null)}
+                                    autoCapitalize="words"
+                                />
+                            </View>
+                        )}
 
-                    <TouchableOpacity
-                        style={[s.continueBtn, isProcessing && s.continueBtnDisabled]}
-                        onPress={handleContinue}
-                        disabled={isProcessing}
-                        activeOpacity={0.9}
-                    >
-                        <LinearGradient
-                            colors={[COLORS.primary, '#00A87E']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={s.continueGradient}
+                        <View style={[s.inputWrap, focusedField === 'email' && s.inputWrapFocused]}>
+                            <MaterialCommunityIcons
+                                name="email-outline"
+                                size={22}
+                                color={focusedField === 'email' ? COLORS.primary : COLORS.textMuted}
+                            />
+                            <TextInput
+                                style={s.input}
+                                placeholder="Email Address"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={email}
+                                onChangeText={setEmail}
+                                onFocus={() => setFocusedField('email')}
+                                onBlur={() => setFocusedField(null)}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+                        </View>
+
+                        <View style={[s.inputWrap, focusedField === 'password' && s.inputWrapFocused]}>
+                            <MaterialCommunityIcons
+                                name="lock-outline"
+                                size={22}
+                                color={focusedField === 'password' ? COLORS.primary : COLORS.textMuted}
+                            />
+                            <TextInput
+                                style={s.input}
+                                placeholder="Password"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={password}
+                                onChangeText={setPassword}
+                                onFocus={() => setFocusedField('password')}
+                                onBlur={() => setFocusedField(null)}
+                                secureTextEntry
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[s.continueBtn, isProcessing && s.continueBtnDisabled]}
+                            onPress={handleContinue}
+                            disabled={isProcessing}
+                            activeOpacity={0.9}
                         >
-                            <Text style={s.continueBtnText}>
-                                {isProcessing ? 'Verifying...' : t('continue')}
-                            </Text>
-                            {!isProcessing && <MaterialCommunityIcons name="arrow-right" size={20} color="#000000" />}
-                        </LinearGradient>
-                    </TouchableOpacity>
+                            <LinearGradient
+                                colors={[COLORS.primary, '#00A87E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={s.continueGradient}
+                            >
+                                <Text style={s.continueBtnText}>
+                                    {isProcessing ? 'Verifying...' : (isSignUp ? 'Create Account' : t('continue'))}
+                                </Text>
+                                {!isProcessing && <MaterialCommunityIcons name="arrow-right" size={20} color="#000000" />}
+                            </LinearGradient>
+                        </TouchableOpacity>
 
-                    <View style={s.footerContainer}>
-                        <Text style={s.disclaimer}>
-                            By continuing, you agree to our{' '}
-                            <Text style={s.link}>Terms of Service</Text>
-                        </Text>
+                        <TouchableOpacity 
+                            style={s.toggleAuth} 
+                            onPress={() => setIsSignUp(!isSignUp)}
+                        >
+                            <Text style={s.toggleAuthText}>
+                                {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <View style={s.footerContainer}>
+                            <Text style={s.disclaimer}>
+                                By continuing, you agree to our{' '}
+                                <Text style={s.link}>Terms of Service</Text>
+                            </Text>
+                        </View>
                     </View>
-                </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </View>
     );
@@ -325,6 +384,17 @@ const s = StyleSheet.create({
         fontWeight: '800',
         color: '#000000',
         fontFamily: FONTS.heading,
+    },
+    toggleAuth: {
+        marginTop: 24,
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    toggleAuthText: {
+        fontSize: 15,
+        color: COLORS.textMuted,
+        fontFamily: FONTS.regular,
+        fontWeight: '600',
     },
     footerContainer: {
         marginTop: 30,

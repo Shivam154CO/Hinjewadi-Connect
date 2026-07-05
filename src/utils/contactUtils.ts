@@ -102,10 +102,10 @@ export const executeContact = (action: ContactAction, contact: ContactInfo) => {
             sendSMS(contact.phone, `Hi ${contact.name}, contacting from Hinjewadi Connect.`);
             break;
         case 'chat':
-            // Future: navigate to in-app chat
+            // In-app chat: caller should navigate to ChatRoom directly using chatService.findOrCreateSession
             Alert.alert(
-                'Coming Soon! 💬',
-                'In-app chat will be available in the next update. For now, use Call or WhatsApp.',
+                'In-App Chat',
+                'In-app chat is available. Use the Message button from any listing to start a conversation.',
                 [{ text: 'OK' }]
             );
             break;

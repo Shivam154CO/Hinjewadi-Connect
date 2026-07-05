@@ -1,45 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
     TextInput, ActivityIndicator, RefreshControl, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
-import { MainTabScreenProps, Room, Job } from '../../types';
+import { MainTabScreenProps } from '../../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { roomService } from '../../services/roomService';
-import { jobService } from '../../services/jobService';
+import { useRooms } from '../../hooks/useRooms';
+import { useJobs } from '../../hooks/useJobs';
 import { useTranslation } from 'react-i18next';
 
 const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
     const { t } = useTranslation();
     const { user } = useAuth();
-    const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
-    const [recentJobs, setRecentJobs] = useState<Job[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [search, setSearch] = useState('');
+
+    const { data: featuredRooms = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms(6);
+    const { data: recentJobs = [], isLoading: jobsLoading, refetch: refetchJobs } = useJobs(4);
+
+    const isLoading = roomsLoading || jobsLoading;
+    const [refreshing, setRefreshing] = useState(false);
 
     const userName = user?.name?.split(' ')[0] || 'there';
 
-    useEffect(() => { loadData(); }, []);
-
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const [rooms, jobs] = await Promise.all([
-                roomService.getRooms(6),
-                jobService.getJobs(4),
-            ]);
-            setFeaturedRooms(rooms);
-            setRecentJobs(jobs);
-        } catch { } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([refetchRooms(), refetchJobs()]);
+        setRefreshing(false);
     };
 
-    if (loading && !refreshing) {
+    if (isLoading && !refreshing) {
         return (
             <View style={styles.loadingWrap}>
                 <ActivityIndicator size="large" color="#00C896" />
@@ -70,7 +61,7 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scroll}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#00C896" />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00C896" />}
             >
                 {/* Search */}
                 <View style={styles.searchWrap}>
@@ -132,7 +123,7 @@ const HomeScreen: React.FC<MainTabScreenProps<'Home'>> = ({ navigation }) => {
                                         {room.images?.[0] ? (
                                             <Image source={{ uri: room.images[0] }} style={StyleSheet.absoluteFill} />
                                         ) : (
-                                            <View style={styles.roomGridPlaceholder}>
+                                            <View style={styles.roomGridIconFallback}>
                                                 <MaterialCommunityIcons name="home-city-outline" size={32} color="#3A3A3C" />
                                             </View>
                                         )}
@@ -247,7 +238,7 @@ const styles = StyleSheet.create({
         height: 170, borderRadius: 20, overflow: 'hidden',
         backgroundColor: '#1C1C1E', position: 'relative',
     },
-    roomGridPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    roomGridIconFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     roomGridOverlay: {
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0,0,0,0.3)',

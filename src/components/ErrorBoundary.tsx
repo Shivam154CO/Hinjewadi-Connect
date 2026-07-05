@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { COLORS, SPACING, BORDER_RADIUS } from '../theme/theme';
 
 interface Props {
   children?: ReactNode;
@@ -59,12 +60,12 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  icon: { fontSize: 64, marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: '#6B7280', textAlign: 'center', marginBottom: 24, lineHeight: 24 },
-  errorText: { backgroundColor: '#FEE2E2', color: '#B91C1C', padding: 12, borderRadius: 8, marginBottom: 24, fontSize: 12, width: '100%', fontFamily: 'monospace' },
-  button: { backgroundColor: '#4F46E5', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' }
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  icon: { fontSize: 64, marginBottom: SPACING.md },
+  title: { fontSize: 24, fontWeight: 'bold', color: COLORS.text, marginBottom: SPACING.xs, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 24 },
+  errorText: { backgroundColor: '#441111', color: COLORS.error, padding: SPACING.md, borderRadius: BORDER_RADIUS.sm, marginBottom: SPACING.lg, fontSize: 12, width: '100%', fontFamily: 'monospace' },
+  button: { backgroundColor: COLORS.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: BORDER_RADIUS.md },
+  buttonText: { color: COLORS.white, fontSize: 16, fontWeight: 'bold' }
 });

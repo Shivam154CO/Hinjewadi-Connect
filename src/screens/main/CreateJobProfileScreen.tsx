@@ -16,6 +16,7 @@ import { MainStackScreenProps, JobCategory, JobSeekerProfile } from '../../types
 import { jobService } from '../../services/jobService';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { useAuth } from '../../context/AuthContext';
 
 const JOB_CATEGORIES: { key: JobCategory; label: string; icon: string }[] = [
     { key: 'Peon', label: 'Peon', icon: 'account' },
@@ -44,6 +45,7 @@ const SKILLS_BY_CATEGORY: Record<JobCategory, string[]> = {
 const AVAILABILITY_OPTIONS = ['Immediately', 'Within 1 Week', 'Within 1 Month'] as const;
 
 export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobProfile'>> = ({ navigation }) => {
+    const { user } = useAuth();
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<JobCategory | null>(null);
@@ -72,6 +74,7 @@ export const CreateJobProfileScreen: React.FC<MainStackScreenProps<'CreateJobPro
         setLoading(true);
         try {
             const profile: Omit<JobSeekerProfile, 'id' | 'createdAt'> = {
+                userId: user?.id,
                 name,
                 phone,
                 category: selectedCategory,

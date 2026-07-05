@@ -91,8 +91,10 @@ class MarketEngineService {
         // Penalize for reports
         score -= (profile.report_count || 0) * 10;
         
-        // Reward for positive contributions (placeholder for review logic)
-        score += (profile.total_reviews || 0) * 2;
+        // Reward for positive contributions
+        if ((profile.total_reviews || 0) > 0) {
+            score += (profile.total_reviews * ((profile.average_rating || 0) / 5)) * 2;
+        }
 
         return Math.max(0, Math.min(100, score));
     }

@@ -1,23 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../theme/theme';
 import { MainTabScreenProps } from '../../types';
-import { chatService, ChatSession } from '../../services/chatService';
 import { useAuth } from '../../context/AuthContext';
+import { useChatSessions } from '../../hooks/useChat';
 
 export const InboxScreen: React.FC<MainTabScreenProps<'Inbox'>> = ({ navigation }) => {
     const { user } = useAuth();
-    const [sessions, setSessions] = React.useState<ChatSession[]>([]);
-    const [loading, setLoading] = React.useState(true);
+    const { 
+        data: sessions = [], 
+        isLoading, 
+        isRefetching, 
+        refetch 
+    } = useChatSessions(user?.id);
 
-    React.useEffect(() => {
-        if (!user) return;
-        chatService.getInboxSessions(user.id).then(data => {
-            setSessions(data);
-            setLoading(false);
-        });
-    }, [user]);
+    const handleRefresh = React.useCallback(() => {
+        refetch();
+    }, [refetch]);
 
     return (
         <View style={s.root}>
@@ -25,15 +26,15 @@ export const InboxScreen: React.FC<MainTabScreenProps<'Inbox'>> = ({ navigation 
                 <View style={s.header}>
                     <Text style={s.title}>Messages</Text>
                     <TouchableOpacity style={s.headerBtn}>
-                        <MaterialCommunityIcons name="pencil-outline" size={20} color="#00C896" />
+                        <MaterialCommunityIcons name="pencil-outline" size={20} color={COLORS.primary} />
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
 
-            {loading ? null : sessions.length === 0 ? (
+            {isLoading && !isRefetching ? null : sessions.length === 0 ? (
                 <View style={s.empty}>
                     <View style={s.emptyIcon}>
-                        <MaterialCommunityIcons name="chat-sleep-outline" size={40} color="#636366" />
+                        <MaterialCommunityIcons name="chat-sleep-outline" size={40} color={COLORS.textMuted} />
                     </View>
                     <Text style={s.emptyTitle}>No messages yet</Text>
                     <Text style={s.emptySubtitle}>When someone contacts you, it'll show up here.</Text>
@@ -44,6 +45,14 @@ export const InboxScreen: React.FC<MainTabScreenProps<'Inbox'>> = ({ navigation 
                     keyExtractor={item => item.id}
                     contentContainerStyle={{ paddingBottom: 110 }}
                     ItemSeparatorComponent={() => <View style={s.divider} />}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefetching}
+                            onRefresh={handleRefresh}
+                            tintColor={COLORS.primary}
+                            colors={[COLORS.primary]}
+                        />
+                    }
                     renderItem={({ item }) => {
                         const hasUnread = (item.unread || 0) > 0;
                         const initial = item.other_user?.name?.[0]?.toUpperCase() || 'U';
@@ -92,51 +101,51 @@ export const InboxScreen: React.FC<MainTabScreenProps<'Inbox'>> = ({ navigation 
 };
 
 const s = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#0F0F0F' },
+    root: { flex: 1, backgroundColor: COLORS.background },
     header: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
+        paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md,
     },
-    title: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
+    title: { fontSize: 28, fontWeight: '800', color: COLORS.text, letterSpacing: -0.5 },
     headerBtn: {
-        width: 40, height: 40, borderRadius: 12,
-        backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center',
+        width: 40, height: 40, borderRadius: BORDER_RADIUS.sm,
+        backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center',
     },
-    divider: { height: 1, backgroundColor: '#1C1C1E', marginLeft: 82 },
+    divider: { height: 1, backgroundColor: COLORS.surface, marginLeft: 82 },
     chatRow: {
         flexDirection: 'row', alignItems: 'center',
-        paddingVertical: 14, paddingHorizontal: 20,
+        paddingVertical: 14, paddingHorizontal: SPACING.lg,
     },
-    avatarWrap: { position: 'relative', marginRight: 14 },
+    avatarWrap: { position: 'relative', marginRight: SPACING.md },
     avatar: {
-        width: 52, height: 52, borderRadius: 18,
-        backgroundColor: '#2C2C2E', alignItems: 'center', justifyContent: 'center',
+        width: 52, height: 52, borderRadius: BORDER_RADIUS.md,
+        backgroundColor: COLORS.input, alignItems: 'center', justifyContent: 'center',
     },
-    avatarActive: { backgroundColor: '#00C89620', borderWidth: 1.5, borderColor: '#00C896' },
-    avatarText: { fontSize: 20, fontWeight: '700', color: '#AEAEB2' },
+    avatarActive: { backgroundColor: COLORS.primaryGlow, borderWidth: 1.5, borderColor: COLORS.primary },
+    avatarText: { fontSize: 20, fontWeight: '700', color: COLORS.textSecondary },
     onlineDot: {
         position: 'absolute', top: -2, right: -2,
         width: 12, height: 12, borderRadius: 6,
-        backgroundColor: '#00C896', borderWidth: 2, borderColor: '#0F0F0F',
+        backgroundColor: COLORS.primary, borderWidth: 2, borderColor: COLORS.background,
     },
     chatContent: { flex: 1 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-    name: { fontSize: 15, fontWeight: '600', color: '#AEAEB2' },
-    nameUnread: { color: '#FFFFFF', fontWeight: '700' },
-    time: { fontSize: 12, color: '#3A3A3C' },
-    timeUnread: { color: '#00C896' },
-    lastMsg: { fontSize: 13, color: '#3A3A3C' },
-    lastMsgUnread: { color: '#636366' },
+    name: { fontSize: 15, fontWeight: '600', color: COLORS.textSecondary },
+    nameUnread: { color: COLORS.text, fontWeight: '700' },
+    time: { fontSize: 12, color: COLORS.textMuted },
+    timeUnread: { color: COLORS.primary },
+    lastMsg: { fontSize: 13, color: COLORS.textMuted },
+    lastMsgUnread: { color: COLORS.textSecondary },
     badge: {
         width: 22, height: 22, borderRadius: 11,
-        backgroundColor: '#00C896', alignItems: 'center', justifyContent: 'center', marginLeft: 10,
+        backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginLeft: 10,
     },
-    badgeText: { fontSize: 11, fontWeight: '800', color: '#000000' },
+    badgeText: { fontSize: 11, fontWeight: '800', color: COLORS.black },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
     emptyIcon: {
-        width: 80, height: 80, borderRadius: 28,
-        backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+        width: 80, height: 80, borderRadius: BORDER_RADIUS.xl,
+        backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
     },
-    emptyTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginBottom: 8 },
-    emptySubtitle: { fontSize: 14, color: '#636366', textAlign: 'center', paddingHorizontal: 40, lineHeight: 20 },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 8 },
+    emptySubtitle: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', paddingHorizontal: SPACING.xxl, lineHeight: 20 },
 });

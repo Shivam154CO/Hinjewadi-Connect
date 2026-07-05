@@ -49,7 +49,8 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
         if (!selectedReason) return;
         setLoading(true);
         try {
-            await submitReport(reporterId, targetId, targetType, selectedReason, description);
+            const report = await submitReport(reporterId, targetId, targetType, selectedReason, description);
+            if (!report) throw new Error('Report submission failed');
 
             if (alsoBlock && targetUserId && targetUserName && targetUserPhone) {
                 const blocked = await blockUser(
@@ -59,7 +60,9 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                     targetUserPhone,
                     `Blocked via report: ${selectedReason}`,
                 );
-                addToBlockedList(blocked);
+                if (blocked) {
+                    addToBlockedList(blocked);
+                }
             }
 
             setStep('submitted');
@@ -97,7 +100,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                             {/* Header */}
                             <View style={styles.headerRow}>
                                 <View style={styles.reportIconCircle}>
-                                    <MaterialCommunityIcons name="flag-outline" size={22} color="#EF4444" />
+                                    <MaterialCommunityIcons name="flag-outline" size={22} color={COLORS.error} />
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.title}>Report {typeLabel}</Text>
@@ -168,7 +171,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                             <TextInput
                                 style={styles.detailsInput}
                                 placeholder="Describe the issue..."
-                                placeholderTextColor={COLORS.textSecondary}
+                                placeholderTextColor={COLORS.textMuted}
                                 value={description}
                                 onChangeText={setDescription}
                                 multiline
@@ -185,7 +188,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                                     <MaterialCommunityIcons
                                         name={alsoBlock ? 'checkbox-marked' : 'checkbox-blank-outline'}
                                         size={22}
-                                        color={alsoBlock ? '#EF4444' : COLORS.textSecondary}
+                                        color={alsoBlock ? COLORS.error : COLORS.textSecondary}
                                     />
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.blockRowText}>Also block {targetUserName || 'this user'}</Text>
@@ -215,7 +218,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                     {step === 'submitted' && (
                         <View style={styles.submittedContainer}>
                             <View style={styles.submittedIcon}>
-                                <MaterialCommunityIcons name="check-circle" size={48} color="#10B981" />
+                                <MaterialCommunityIcons name="check-circle" size={48} color={COLORS.success} />
                             </View>
                             <Text style={styles.submittedTitle}>Report Submitted</Text>
                             <Text style={styles.submittedDesc}>
@@ -224,7 +227,7 @@ export const ReportSheet: React.FC<ReportSheetProps> = ({
                             </Text>
                             {alsoBlock && (
                                 <View style={styles.blockedNotice}>
-                                    <MaterialCommunityIcons name="account-cancel" size={16} color="#EF4444" />
+                                    <MaterialCommunityIcons name="account-cancel" size={16} color={COLORS.error} />
                                     <Text style={styles.blockedNoticeText}>
                                         {targetUserName || 'User'} has been blocked
                                     </Text>
@@ -260,15 +263,17 @@ export const BlockButton: React.FC<BlockButtonProps> = ({
     const handleBlock = () => {
         confirmBlock(userName, async () => {
             const blocked = await blockUser(currentUserId, userId, userName, userPhone, 'Manually blocked');
-            addToBlockedList(blocked);
-            Alert.alert('Blocked', `${userName} has been blocked.`);
-            onBlocked?.();
+            if (blocked) {
+                addToBlockedList(blocked);
+                Alert.alert('Blocked', `${userName} has been blocked.`);
+                onBlocked?.();
+            }
         });
     };
 
     return (
         <TouchableOpacity style={styles.blockBtn} onPress={handleBlock}>
-            <MaterialCommunityIcons name="account-cancel" size={18} color="#EF4444" />
+            <MaterialCommunityIcons name="account-cancel" size={18} color={COLORS.error} />
             <Text style={styles.blockBtnText}>Block User</Text>
         </TouchableOpacity>
     );
@@ -283,8 +288,8 @@ interface ReportBlockActionsProps {
 export const ReportBlockActions: React.FC<ReportBlockActionsProps> = ({ onReport, onBlock }) => (
     <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionBtn} onPress={onReport}>
-            <MaterialCommunityIcons name="flag-outline" size={16} color="#EF4444" />
-            <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Report</Text>
+            <MaterialCommunityIcons name="flag-outline" size={16} color={COLORS.error} />
+            <Text style={[styles.actionBtnText, { color: COLORS.error }]}>Report</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={onBlock}>
             <MaterialCommunityIcons name="account-cancel-outline" size={16} color={COLORS.textSecondary} />
@@ -296,11 +301,11 @@ export const ReportBlockActions: React.FC<ReportBlockActionsProps> = ({ onReport
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'flex-end',
     },
     sheet: {
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderTopLeftRadius: BORDER_RADIUS.xl,
         borderTopRightRadius: BORDER_RADIUS.xl,
         paddingHorizontal: SPACING.lg,
@@ -312,7 +317,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 4,
         borderRadius: 2,
-        backgroundColor: COLORS.border,
+        backgroundColor: COLORS.borderLight,
         alignSelf: 'center',
         marginTop: SPACING.md,
         marginBottom: SPACING.md,
@@ -327,7 +332,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#FFEBEE',
+        backgroundColor: COLORS.error + '20',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -351,25 +356,25 @@ const styles = StyleSheet.create({
     reasonRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 10,
+        paddingVertical: SPACING.sm,
+        paddingHorizontal: SPACING.sm,
         borderRadius: BORDER_RADIUS.md,
         gap: SPACING.sm,
         marginBottom: 4,
     },
     reasonRowSelected: {
-        backgroundColor: '#FFF5F5',
+        backgroundColor: COLORS.surfaceAlt,
     },
     reasonIcon: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#F1F5F9',
+        backgroundColor: COLORS.surfaceAlt,
         alignItems: 'center',
         justifyContent: 'center',
     },
     reasonIconSelected: {
-        backgroundColor: '#EF4444',
+        backgroundColor: COLORS.error,
     },
     reasonLabel: {
         fontSize: 14,
@@ -391,23 +396,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     radioOuterSelected: {
-        borderColor: '#EF4444',
+        borderColor: COLORS.error,
     },
     radioInner: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: '#EF4444',
+        backgroundColor: COLORS.error,
     },
     // Continue
     continueBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#EF4444',
+        backgroundColor: COLORS.error,
         paddingVertical: 14,
         borderRadius: BORDER_RADIUS.full,
-        gap: 8,
+        gap: SPACING.sm,
         marginTop: SPACING.md,
     },
     continueBtnDisabled: {
@@ -427,7 +432,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.text,
         minHeight: 100,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: COLORS.input,
         marginBottom: SPACING.md,
     },
     blockRow: {
@@ -436,7 +441,7 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingVertical: SPACING.sm,
         paddingHorizontal: SPACING.sm,
-        backgroundColor: '#FFF5F5',
+        backgroundColor: COLORS.error + '10',
         borderRadius: BORDER_RADIUS.md,
         marginBottom: SPACING.md,
     },
@@ -453,10 +458,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#EF4444',
+        backgroundColor: COLORS.error,
         paddingVertical: 14,
         borderRadius: BORDER_RADIUS.full,
-        gap: 8,
+        gap: SPACING.sm,
     },
     submitBtnText: {
         color: COLORS.white,
@@ -487,7 +492,7 @@ const styles = StyleSheet.create({
     blockedNotice: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFEBEE',
+        backgroundColor: COLORS.error + '20',
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: BORDER_RADIUS.full,
@@ -497,10 +502,10 @@ const styles = StyleSheet.create({
     blockedNoticeText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#EF4444',
+        color: COLORS.error,
     },
     doneBtn: {
-        backgroundColor: '#10B981',
+        backgroundColor: COLORS.success,
         paddingHorizontal: 40,
         paddingVertical: 14,
         borderRadius: BORDER_RADIUS.full,
@@ -517,11 +522,11 @@ const styles = StyleSheet.create({
         gap: 6,
         paddingHorizontal: 14,
         paddingVertical: 10,
-        backgroundColor: '#FFEBEE',
+        backgroundColor: COLORS.error + '20',
         borderRadius: BORDER_RADIUS.full,
     },
     blockBtnText: {
-        color: '#EF4444',
+        color: COLORS.error,
         fontWeight: '600',
         fontSize: 13,
     },
@@ -537,7 +542,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: BORDER_RADIUS.full,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: COLORS.surfaceAlt,
     },
     actionBtnText: {
         fontSize: 12,
